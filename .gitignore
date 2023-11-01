@@ -6,3 +6,4 @@
 /src/*/__pycache__
 *.pyc
 /derivations/
+*.ipynb_checkpoints
