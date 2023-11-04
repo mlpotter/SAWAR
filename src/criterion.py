@@ -3,8 +3,7 @@ import torch.nn as nn
 
 
 def interval_censored(rate,k,t_start,t_end,event):
-    interval_probability = torch.exp( -(rate*t_start)**k) - torch.exp( -(rate*t_end)**k )
-    return -torch.log(interval_probability).sum()
+    pass
 
 def right_censored(rate,k,t,event):
     log_exact = torch.log(rate*k) + (k-1)*torch.log(rate*t) - (t*rate)**k
