@@ -23,8 +23,8 @@ class Exponential_Model(nn.Module):
     def forward(self,x):
 
         rate = self.rate(x)
-
-        return rate
+        k = torch.ones_like(rate)
+        return rate,k
 
 
 def main():
@@ -39,8 +39,8 @@ def main():
     x = torch.randn(batch_size,input_dim)
     print(model)
     print(model.layers)
-    rate = model(x)
-    print(rate)
+    rate,k = model(x)
+    print(rate,k)
 
 
 if __name__ == "__main__":

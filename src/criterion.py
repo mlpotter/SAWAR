@@ -2,13 +2,40 @@ import torch
 import torch.nn as nn
 
 
-def interval_censored(rate,t_start,t_end):
-    pass
+def interval_censored(rate,k,t_start,t_end,event):
+    interval_probability = torch.exp( -(rate*t_start)**k) - torch.exp( -(rate*t_end)**k )
+    return -torch.log(interval_probability).sum()
 
-def right_censored(rate,t_exact,t_start):
-    pass
+def right_censored(rate,k,t,event):
+    log_exact = torch.log(rate*k) + (k-1)*torch.log(rate*t) - (t*rate)**k
+    log_right = -(rate*t)**k
 
-def left_censored(rate,t_exact,t_end):
-    pass
+    return (-event*log_exact - (1-event)*log_right).sum()
 
+def main():
+    from src.models import Exponential_Model
+
+    input_dim = 5
+    hidden_layers = [10,10]
+    output_dim = 1
+
+    batch_size = 10
+    x = torch.randn(batch_size,input_dim)
+
+    model = Exponential_Model(input_dim=input_dim,hidden_layers=hidden_layers,output_dim=output_dim)
+
+    rate,k = model(x)
+
+    beta = torch.randn(input_dim,1)
+    rate_true = torch.exp(x@beta)
+    t_distribution = torch.distributions.exponential.Exponential(rate_true)
+    t = t_distribution.sample()
+    event = torch.ones_like(t)
+
+    objective = right_censored
+
+    print(objective(rate,k,t,event))
+
+if __name__ == "__main__":
+    main()
 
