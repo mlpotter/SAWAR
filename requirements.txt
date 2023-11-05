@@ -1,0 +1,3 @@
+SurvSet==0.2.6
+torch==2.1.0+cu118
+scikit-learn==1.3.2
