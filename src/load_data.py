@@ -14,7 +14,7 @@ def numpy_to_tensor(np_tensors):
 def load_datasets(ds_name="ovs",test_size=0.2):
     # SurvLoader to load in time to event datasets
     loader = SurvLoader()
-    data_df, _ = loader.load_dataset(ds_name="ova").values()
+    data_df, _ = loader.load_dataset(ds_name=ds_name).values()
 
     # Event vector where 1 denotes event occurred, 0 denotes no event occured
     event = data_df.pop("event").values.reshape(-1,1)
