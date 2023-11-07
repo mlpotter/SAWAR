@@ -2,6 +2,7 @@ import torch
 from SurvSet.data import SurvLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset
 def numpy_to_tensor(np_tensors):
     torch_tensors = []
@@ -11,7 +12,7 @@ def numpy_to_tensor(np_tensors):
     return torch_tensors
 
 
-def load_datasets(ds_name="ovs",test_size=0.2):
+def load_datasets(ds_name="ova",normalize=True,test_size=0.2):
     # SurvLoader to load in time to event datasets
     loader = SurvLoader()
     data_df, _ = loader.load_dataset(ds_name=ds_name).values()
@@ -36,6 +37,13 @@ def load_datasets(ds_name="ovs",test_size=0.2):
 
     # Train-Test split for loading the data
     X_train,X_test, time_train,time_test, event_train,event_test = train_test_split(X,time,event,stratify=event,test_size=test_size)
+
+
+    if normalize:
+        std = StandardScaler()
+        X_train = std.fit_transform(X_train)
+        X_test = std.transform(X_test)
+        X_train,X_test = numpy_to_tensor((X_train,X_test))
 
     dataset_train = TensorDataset(X_train,time_train,event_train)
     dataset_test = TensorDataset(X_test,time_test,event_test)
