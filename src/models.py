@@ -9,7 +9,7 @@ class Exponential_Model(nn.Module):
         self.linears = nn.ModuleList([nn.Linear(self.layers[i],self.layers[i+1]) for i in range(len(self.layers)-1)])
         self.num_layers = len(self.layers)
 
-    def rate(self,x):
+    def rate_logit(self,x):
         for i,l in enumerate(self.linears):
             x = l(x)
 
@@ -18,11 +18,12 @@ class Exponential_Model(nn.Module):
 
             x = F.leaky_relu(x)
 
-        return torch.exp(x)
+        return x
 
     def forward(self,x):
 
-        rate = self.rate(x)
+        rate_logit = self.rate_logit(x)
+        rate = torch.exp(rate_logit)
         k = torch.ones_like(rate)
         return rate,k
 

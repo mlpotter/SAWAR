@@ -12,7 +12,7 @@ def numpy_to_tensor(np_tensors):
     return torch_tensors
 
 
-def load_datasets(ds_name="ova",normalize=True,test_size=0.2):
+def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # SurvLoader to load in time to event datasets
     loader = SurvLoader()
     data_df, _ = loader.load_dataset(ds_name=ds_name).values()
@@ -23,7 +23,7 @@ def load_datasets(ds_name="ova",normalize=True,test_size=0.2):
     time = data_df.pop("time").values.reshape(-1,1)
 
     # one hot encode all the "fac" categorical variables
-    data_df_ohe = pd.get_dummies(data_df,columns=[col for col in data_df.columns if "fac" in col],dtype=float)
+    data_df_ohe = pd.get_dummies(data_df,columns=[col for col in data_df.columns if "fac" in col],drop_first=drop_first,dtype=float)
 
     # need to improve logic of dropping  pid
     data_df_ohe.drop("pid",inplace=True,axis=1)
@@ -50,10 +50,32 @@ def load_datasets(ds_name="ova",normalize=True,test_size=0.2):
 
     return dataset_train,dataset_test
 
+def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
+    # SurvLoader to load in time to event datasets
+    loader = SurvLoader()
+    data_df, _ = loader.load_dataset(ds_name=ds_name).values()
+
+    # one hot encode all the "fac" categorical variables
+    data_df_ohe = pd.get_dummies(data_df,columns=[col for col in data_df.columns if "fac" in col],drop_first=drop_first,dtype=float)
+
+    # need to improve logic of dropping  pid
+    data_df_ohe.drop("pid",inplace=True,axis=1)
+
+    # Train-Test split for loading the data
+    data_train,data_test = train_test_split(data_df_ohe,stratify=data_df_ohe.event,test_size=test_size)
+
+    features = [col for col in data_train.columns if col not in ["event","time"]]
+
+    if normalize:
+        std = StandardScaler()
+        data_train.loc[:,features] = std.fit_transform(data_train.loc[:,features])
+        data_test.loc[:, features] = std.transform(data_test.loc[:, features])
+
+    return data_train,data_test
 if __name__ == "__main__":
     dataset_train,dataset_test = load_datasets()
 
     print("Train len: ",len(dataset_train))
     print("Test len: ",len(dataset_test))
 
-    print()
+    load_dataframe(ds_name="ova",normalize=True,test_size=0.2)
