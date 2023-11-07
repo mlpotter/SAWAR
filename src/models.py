@@ -26,10 +26,18 @@ class Exponential_Model(nn.Module):
         k = torch.ones_like(rate)
         return rate,k
 
+    def survival_qdf(self,x,t):
+
+        with torch.no_grad():
+            t = t.reshape(1,-1)
+            rate,k = self.forward(x)
+            St = torch.exp( -(rate*t)** k)
+
+        return St
 
 def main():
     input_dim = 5
-    hidden_layers = [10,10]
+    hidden_layers = [10]
     output_dim = 1
 
     batch_size = 10
@@ -42,6 +50,10 @@ def main():
     rate,k = model(x)
     print(rate,k)
 
+    t = torch.linspace(0,5,15)
+
+    St = model.survival_qdf(x,t)
+    print(St.shape)
 
 if __name__ == "__main__":
     main()
