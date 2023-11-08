@@ -16,7 +16,8 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            lami,ki = model(xi)
+            lami,ki = model.pdf_parameters(xi)
+
             loss = criterion(lami,ki,ti,yi)
             loss.backward()
             optimizer.step()

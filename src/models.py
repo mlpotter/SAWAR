@@ -20,18 +20,23 @@ class Exponential_Model(nn.Module):
 
         return x
 
-    def forward(self,x):
+    def pdf_parameters(self,x):
 
         rate_logit = self.rate_logit(x)
         rate = torch.exp(rate_logit)
         k = torch.ones_like(rate)
         return rate,k
 
+    def forward(self,x):
+        rate_logit = self.rate_logit(x)
+        rate = torch.exp(rate_logit)
+        return rate
+
     def survival_qdf(self,x,t):
 
         with torch.no_grad():
             t = t.reshape(1,-1)
-            rate,k = self.forward(x)
+            rate,k = self.pdf_parameters(x)
             St = torch.exp( -(rate*t)** k)
 
         return St
