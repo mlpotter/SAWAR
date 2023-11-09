@@ -16,9 +16,9 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            lami,ki = model.pdf_parameters(xi)
+            rate,k = model.pdf_parameters(xi)
 
-            loss = criterion(lami,ki,ti,yi)
+            loss = criterion(rate,k,ti,yi)
             loss.backward()
             optimizer.step()
 
@@ -34,3 +34,7 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
         torch.save(model.state_dict(),save_pth)
 
     return torch.arange(epochs),train_loss
+
+# TODO: optimize min max?
+def train_robust():
+    pass

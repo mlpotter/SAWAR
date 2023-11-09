@@ -23,7 +23,7 @@ def main():
 
     model = Exponential_Model(input_dim=input_dim,hidden_layers=hidden_layers,output_dim=output_dim)
 
-    rate,k = model(x)
+    rate,k = model.pdf_parameters(x)
 
     beta = torch.randn(input_dim,1)
     rate_true = torch.exp(x@beta)
