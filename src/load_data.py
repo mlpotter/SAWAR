@@ -48,6 +48,10 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     dataset_train = TensorDataset(X_train,time_train,event_train)
     dataset_test = TensorDataset(X_test,time_test,event_test)
 
+    if normalize:
+        dataset_train.mean = dataset_test.mean = torch.Tensor(std.mean_).reshape(1,-1)
+        dataset_train.std = dataset_test.std = torch.Tensor(std.scale_).reshape(1,-1)
+
     return dataset_train,dataset_test
 
 def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):

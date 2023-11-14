@@ -11,6 +11,19 @@ def right_censored(rate,k,t,event):
 
     return (-event*log_exact - (1-event)*log_right).sum()
 
+class RightCensorWrapper(nn.Module):
+    def __init__(self,model):
+        super(RightCensorWrapper,self).__init__()
+        self.model = model
+
+    def forward(self,x,t,e):
+        rate = self.model(x)
+
+        log_exact = e * torch.log(rate) + e * -(t * rate)
+        log_right = (1 - e) * -(rate * t)
+
+        return -log_exact + -log_right
+
 def main():
     from src.models import Exponential_Model
 
