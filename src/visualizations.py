@@ -50,7 +50,7 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
     plt.figure(figsize=(10,10))
     X_train,T_train,E_train = dataloader.dataset.tensors
-    t = torch.linspace(0,2*T_train.max(),10000)
+    t = torch.linspace(0,T_train.max(),10000)
 
     St_robust_x = clf_robust.survival_qdf(X_train, t).detach()
     St_fragile_x = clf_fragile.survival_qdf(X_train, t).detach()

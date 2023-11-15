@@ -82,7 +82,7 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
 
         regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
         meter.update('Loss', regular_loss.item(), xi.size(0))
-        
+
         if batch_method == "robust":
             # Compute LiRPA bounds using CROWN
             lb, ub = model_loss.compute_bounds(x=(x_bounded, ti, yi), IBP=False, method="backward", bound_upper=True,
