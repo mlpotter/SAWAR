@@ -10,6 +10,8 @@ import random
 import numpy as np
 from torch import optim
 
+from src.criterion import RightCensorWrapper
+
 # TODO: customize for the right censored data analysis or exact time data analysis
 def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_pth=None):
     train_loss = torch.zeros((epochs,))
@@ -110,6 +112,9 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
     torch.cuda.manual_seed_all(args.seed)
     random.seed(args.seed)
     np.random.seed(args.seed)
+
+    # model = BoundedModule(clf, X_train)
+    model = BoundedModule(RightCensorWrapper(model), dataloader_train.dataset.tensors)
 
     ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

@@ -45,7 +45,37 @@ def visualize_individual_curves_attacked(clf,dataloader,epsilon,order="ascending
 
     plt.ylabel("S(t)");
     plt.xlabel("Time")
-    plt.title(f"Individual Survival Curves order={order}")
+    plt.title(f"Individual Survival Curves Change order={order}")
+
+def visualize_individual_curves_changes(clf_robust,clf_fragile,dataloader,order="ascending",test_cases=10):
+    X,T,E = dataloader.dataset.tensors
+
+    t = torch.linspace(0, T.max(), 10000)
+
+    test_cases = min(test_cases,X.shape[0])
+
+    plt.figure(figsize=(10, 10))
+
+    St_robust_x = clf_robust.survival_qdf(X, t).detach()
+    St_fragile_x = clf_fragile.survival_qdf(X, t).detach()
+
+    colors = list(plt.cm.brg(np.linspace(0, 1, test_cases))) + ["crimson", "indigo"]
+
+    if order == "ascending":
+        cases = np.argsort(torch.linalg.norm(St_fragile_x - St_robust_x, axis=1))[0:test_cases]
+
+    elif order == "descending":
+        cases = torch.flip(np.argsort(torch.linalg.norm(St_fragile_x - St_robust_x, axis=1)), dims=(0,))[0:test_cases]
+
+    print(torch.linalg.norm(St_fragile_x - St_robust_x, axis=1)[cases])
+
+    for i, case in enumerate(tqdm(cases)):
+        plt.plot(t, St_fragile_x[case], color=colors[i])
+        plt.plot(t, St_robust_x[case], '--', color=colors[i])
+
+    plt.ylabel("S(t)");
+    plt.xlabel("Time")
+    plt.title(f"Individual Survival Change Curves order={order}")
 def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsilons=[0.1]):
 
     plt.figure(figsize=(10,10))
