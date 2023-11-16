@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 
 
-def interval_censored(rate,k,t_start,t_end,event):
+def interval_censored(rate,t_start,t_end,event):
     pass
 
-def right_censored(rate,k,t,event):
-    log_exact = torch.log(rate*k) + (k-1)*torch.log(rate*t) - (t*rate)**k
-    log_right = -(rate*t)**k
+def right_censored(rate,t,event):
+    log_exact = torch.log(rate) - (t*rate)
+    log_right = -(rate*t)
 
     return (-event*log_exact - (1-event)*log_right).sum()
 

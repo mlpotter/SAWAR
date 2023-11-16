@@ -25,9 +25,9 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            rate,k = model.pdf_parameters(xi)
+            rate= model(xi)
 
-            loss = criterion(rate,k,ti,yi)
+            loss = criterion(rate,ti,yi)
             loss.backward()
             optimizer.step()
 
