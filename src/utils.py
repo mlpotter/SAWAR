@@ -10,7 +10,7 @@ import random
 import numpy as np
 from torch import optim
 
-from src.criterion import RightCensorWrapper
+from src.criterion import RightCensorWrapper,right_censored,ranking_loss
 
 # TODO: customize for the right censored data analysis or exact time data analysis
 def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_pth=None):
@@ -43,6 +43,43 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
     print('Finished Training')
     if save_pth is not None:
         torch.save(model.state_dict(),save_pth)
+
+    return torch.arange(epochs),train_loss
+
+
+def train_ranking(model, dataloader_train, optimizer, epochs, print_every=25, save_pth=None):
+    train_loss = torch.zeros((epochs,))
+
+    for epoch in range(epochs):  # loop over the dataset multiple times
+
+        running_loss = 0.0
+        for i, data in enumerate(dataloader_train, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            xi, ti, yi = data
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            rate = model(xi)
+            Ri = model.failure_cdf(xi,ti)
+
+            loss = right_censored(rate, ti, yi) + ranking_loss(Ri,ti,yi)
+            loss.backward()
+            optimizer.step()
+
+            # print statistics
+            running_loss += loss.item()
+
+        if (epoch + 1) % print_every == 0:
+            print("Epoch {:d}, LL={:.3f}".format(epoch + 1, running_loss))
+        train_loss[epoch] = running_loss
+
+    print('Finished Training')
+    if save_pth is not None:
+        torch.save(model.state_dict(), save_pth)
+
+    return torch.arange(epochs), train_loss
 
     return torch.arange(epochs),train_loss
 
@@ -114,7 +151,6 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
     np.random.seed(args.seed)
 
     # model = BoundedModule(clf, X_train)
-    model = BoundedModule(RightCensorWrapper(model), dataloader_train.dataset.tensors)
 
     ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

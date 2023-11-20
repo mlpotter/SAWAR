@@ -32,11 +32,19 @@ class Exponential_Model(nn.Module):
 
     def survival_qdf(self,x,t):
 
-        t = t.reshape(1,-1)
-        rate,k = self.pdf_parameters(x)
-        St = torch.exp( -(rate*t)** k)
+        t = t.view(1,-1)
+        rate = self.forward(x)
+        St = torch.exp( -(rate*t))
 
         return St
+
+    def failure_cdf(self,x,t):
+
+        t = t.view(1,-1)
+        rate = self.forward(x)
+        Ft = 1-torch.exp( -(rate*t))
+
+        return Ft
 
 def main():
     input_dim = 5
