@@ -23,11 +23,9 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # If event=1, time is the time of event, if event=0, time is the right censor time
     time = data_df.pop("time").values.reshape(-1,1)+1e-5
 
-    if ds_name == "Aids2":
+    if ds_name in ["Aids2","Framingham","dataDIVAT1"]:
         time = time/365
-    elif ds_name == "Framingham":
-        time = time/365
-    elif ds_name == "rott2":
+    elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate"]:
         time = time/12
 
     # one hot encode all the "fac" categorical variables
@@ -69,12 +67,9 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     data_df.dropna(axis=0, inplace=True)
     data_df.time = data_df.time + 1e-5
 
-
-    if ds_name == "Aids2":
+    if ds_name in ["Aids2","Framingham","dataDIVAT1"]:
         data_df.time = data_df.time/365
-    elif ds_name == "Framingham":
-        data_df.time = data_df.time/365
-    elif ds_name == "rott2":
+    elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate"]:
         data_df.time = data_df.time/12
 
     # one hot encode all the "fac" categorical variables

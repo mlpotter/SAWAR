@@ -7,6 +7,8 @@ import random
 
 from tqdm import tqdm
 import numpy as np
+import pandas as pd
+import seaborn as sns
 
 from src.utils import lower_bound
 
@@ -123,5 +125,29 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     axes[1].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
     axes[1].set_title("Nonrobust Population Survival Curves")
     axes[1].set_ylim([0,1])
+
+    plt.show()
+
+def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader):
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    X,_,_ = dataloader.dataset.tensors
+
+
+    lambda_robust = clf_robust(X).detach()
+    lambda_fragile = clf_fragile(X).detach()
+
+    plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
+
+    sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[0], stat="density", legend=False, color="blue")
+    axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[0].set_title("$\lambda$ Robust")
+
+    axes[1].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[1].set_title("$\lambda$ Fragile")
+    sns.histplot(data=plot_df, x="Lambda Fragile", ax=axes[1], stat="density", legend=False, color="orange")
+
+    axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[2].set_title("$\lambda$ Overlap")
+    sns.histplot(data=plot_df, ax=axes[2], stat="density", legend=True)
 
     plt.show()

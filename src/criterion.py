@@ -11,37 +11,9 @@ def right_censored(rate,t,event):
 
     return (-event*log_exact - (1-event)*log_right).sum()
 
-def ranking_loss(R,t,event):
+def ranking_loss():
 
-
-    # model(X_train)
-    #
-    # R = model.failure_cdf(X_train,t)
-    # r_{ij} = risk of i-th pat based on j-th time-condition (last meas. time ~ event time) , i.e. r_i(T_{j})
-
-    torch.diag(R)
-
-    one_vector = torch.ones_like(t)
-
-    R_ = one_vector @ torch.diag(R).view(1,-1)
-    # R_{ij} = r_{i}{T_{j}}
-
-    L = R_ - R
-    # R_{ij} = r_{j}(T_{j}) - r_{i}(T_{j})
-
-    L = L.T
-
-    T = (t < t.T).type(torch.float)
-    # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
-
-    T = torch.diag(event.ravel()) @ T
-    # only remains T_{ij}=1 when event occured for subject i
-
-    sigma1 = 1.0
-
-    pairwise_ranking_loss = T*torch.exp(-L/sigma1)
-
-    pairwise_ranking_loss.mean(axis=1, keepdim=True)
+    # see ranking wrapper...
 
     # I_2 = tf.cast(tf.equal(self.k, e + 1), dtype=tf.float32)  # indicator for event
     # I_2 = tf.diag(tf.squeeze(I_2))
@@ -65,8 +37,7 @@ def ranking_loss(R,t,event):
     # eta.append(tmp_eta)
 
 
-    return pairwise_ranking_loss.mean(axis=1,keepdim=True).sum()
-
+    pass
 
 class RightCensorWrapper(nn.Module):
     def __init__(self,model):
@@ -81,36 +52,75 @@ class RightCensorWrapper(nn.Module):
 
         return -log_exact + -log_right
 
+
 class RankingWrapper(nn.Module):
-    def __init__(self,model):
-        super(RankingWrapper,self).__init__()
+    def __init__(self, model):
+        super(RankingWrapper, self).__init__()
         self.model = model
 
-    def forward(self,x,t,e):
+    def forward(self, x, t, e):
         R = self.model.failure_cdf(x, t)
+        # R{ij} = r_{i}{T_{j}} risk of the ith patient based on jth time condition
+        # R{ij}' = r_{j}{T_{i}} risk of the jth patient based on the ith time condition
 
-        one_vector = torch.ones_like(t)
-        #
-        R_ = one_vector @ torch.diag(R).view(1, -1)
-        # R_{ij} = r_{i}{T_{j}}
-        #
-        L = R_ - R
-        # R_{ij} = r_{j}(T_{j}) - r_{i}(T_{j})
-        #
-        G = torch.transpose(L,1,0)
-        #
-        T = (t < t.T).type(torch.float)
+        Rii = 1.0 - torch.exp(-self.model(x) * t)
+        # R{i} = R_{i}(T_{i})
+
+        G = Rii - R.transpose(1, 0)
+        # G_{ij} = r_{i}(T_{i}) - r_{j}(T_{i})
+
+        T = torch.relu(torch.sign(t.transpose(1, 0) - t))
         # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
 
-        T = torch.diag(e.view(-1,)) @ T
+        A = T * e
         #  only remains T_{ij}=1 when event occured for subject i
-        #
+
         sigma1 = 1.0
         #
-        pairwise_ranking_loss = T * torch.exp(-G / sigma1)
-        #
+        pairwise_ranking_loss = A * torch.exp(-G / sigma1)
+
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
-        return  torch.mean(pairwise_ranking_loss, axis=1).view(-1, 1)
+        return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
+
+class RHS_Ranking_Wrapper(nn.Module):
+    def __init__(self, model,weight=1.0):
+        super(RHS_Ranking_Wrapper, self).__init__()
+        self.model = model
+        self.weight = weight
+
+    def forward(self,x,t,e):
+        return self.weight*self.Rank(x,t,e) + self.RHC(x,t,e)
+
+    def Rank(self,x,t,e):
+        R = self.model.failure_cdf(x, t)
+        # R{ij} = r_{i}{T_{j}} risk of the ith patient based on jth time condition
+        # R{ij}' = r_{j}{T_{i}} risk of the jth patient based on the ith time condition
+
+        Rii = 1.0 - torch.exp(-self.model(x) * t)
+        # R{i} = R_{i}(T_{i})
+
+        G = Rii - R.transpose(1, 0)
+        # G_{ij} = r_{i}(T_{i}) - r_{j}(T_{i})
+
+        T = torch.relu(torch.sign(t.transpose(1, 0) - t))
+        # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
+
+        A = T * e
+        #  only remains T_{ij}=1 when event occured for subject i
+
+        sigma1 = 1.0
+        #
+        pairwise_ranking_loss = A * torch.exp(-G / sigma1)
+
+        # pairwise_ranking_loss.mean(axis=1, keepdim=True)
+        return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
+    def RHC(self,x,t,e):
+        rate = self.model(x)
+
+        log_exact = e * torch.log(rate) + e * -(t * rate)
+        log_right = (1 - e) * -(rate * t)
+
+        return -log_exact + -log_right
 
 def main():
     from src.models import Exponential_Model
