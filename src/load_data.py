@@ -16,11 +16,19 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # SurvLoader to load in time to event datasets
     loader = SurvLoader()
     data_df, _ = loader.load_dataset(ds_name=ds_name).values()
+    data_df.dropna(axis=0, inplace=True)
 
     # Event vector where 1 denotes event occurred, 0 denotes no event occured
     event = data_df.pop("event").values.reshape(-1,1)
     # If event=1, time is the time of event, if event=0, time is the right censor time
-    time = data_df.pop("time").values.reshape(-1,1)
+    time = data_df.pop("time").values.reshape(-1,1)+1e-5
+
+    if ds_name == "Aids2":
+        time = time/365
+    elif ds_name == "Framingham":
+        time = time/365
+    elif ds_name == "rott2":
+        time = time/12
 
     # one hot encode all the "fac" categorical variables
     data_df_ohe = pd.get_dummies(data_df,columns=[col for col in data_df.columns if "fac" in col],drop_first=drop_first,dtype=float)
@@ -58,6 +66,16 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # SurvLoader to load in time to event datasets
     loader = SurvLoader()
     data_df, _ = loader.load_dataset(ds_name=ds_name).values()
+    data_df.dropna(axis=0, inplace=True)
+    data_df.time = data_df.time + 1e-5
+
+
+    if ds_name == "Aids2":
+        data_df.time = data_df.time/365
+    elif ds_name == "Framingham":
+        data_df.time = data_df.time/365
+    elif ds_name == "rott2":
+        data_df.time = data_df.time/12
 
     # one hot encode all the "fac" categorical variables
     data_df_ohe = pd.get_dummies(data_df,columns=[col for col in data_df.columns if "fac" in col],drop_first=drop_first,dtype=float)

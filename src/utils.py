@@ -84,7 +84,7 @@ def train_ranking(model, dataloader_train, optimizer, epochs, print_every=25, sa
     return torch.arange(epochs),train_loss
 
 # TODO: optimize min max?
-def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, method='robust'):
+def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5,0.5],method='robust'):
     meter = MultiAverageMeter()
     if train:
         model_loss.train()
@@ -124,7 +124,7 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
 
         if batch_method == "robust":
             # Compute LiRPA bounds using CROWN
-            lb, ub = model_loss.compute_bounds(x=(x_bounded, ti, yi), IBP=False, method="backward", bound_upper=True,
+            lb, ub = model_loss.compute_bounds(x=(x_bounded, ti, yi), IBP=True, method="backward", bound_upper=True,
                                                bound_lower=False)
             robust_loss = ub.sum()
             loss = robust_loss
@@ -132,7 +132,9 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
             loss = regular_loss
 
         if train:
-            (.1 * loss + 0.9 * regular_loss).backward()
+            combined_loss = ((pareto[0] * loss) + (pareto[1] * regular_loss) )
+            combined_loss.backward()
+
             eps_scheduler.update_loss(loss.item() - regular_loss.item())
             opt.step()
         meter.update('Loss', loss.item(), xi.size(0))
@@ -155,8 +157,7 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
     ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     norm = float(args.norm)
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-    eps_scheduler = eval(args.scheduler_name)(args.eps, args.scheduler_opts)
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(args.num_epochs/10), gamma=0.5)
 
     if method == "robust":
         scheduler_opts = args.scheduler_opts
@@ -174,13 +175,14 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
             lr_scheduler.step()
         print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
-        train_robust_step(model, t, dataloader_train, eps_scheduler, args.norm, True, optimizer, args.bound_type)
+        # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
+        train_robust_step(model, t, dataloader_train, eps_scheduler, args.norm, True, optimizer,bound_type=args.bound_type,pareto=args.pareto,method=method)
         epoch_time = time.time() - start_time
         timer += epoch_time
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
-            train_robust_step(model, t, dataloader_test, eps_scheduler, norm, False, None, args.bound_type)
+            train_robust_step(model, t, dataloader_test, eps_scheduler, norm, False, None, bound_type=args.bound_type,pareto=args.pareto,method=method)
 
         if args.save_model != "":
             torch.save({'state_dict': model.state_dict(), 'epoch': t}, args.save_model)
