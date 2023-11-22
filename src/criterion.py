@@ -54,9 +54,10 @@ class RightCensorWrapper(nn.Module):
 
 
 class RankingWrapper(nn.Module):
-    def __init__(self, model,**kwargs):
+    def __init__(self, model,sigma=1.0,**kwargs):
         super(RankingWrapper, self).__init__()
         self.model = model
+        self.sigma = sigma
 
     def forward(self, x, t, e):
         R = self.model.failure_cdf(x, t)
@@ -75,18 +76,18 @@ class RankingWrapper(nn.Module):
         A = T * e
         #  only remains T_{ij}=1 when event occured for subject i
 
-        sigma1 = 1.0
         #
-        pairwise_ranking_loss = A * torch.exp(-G / sigma1)
+        pairwise_ranking_loss = A * torch.exp(-G / self.sigma)
 
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
         return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
 
 class RHC_Ranking_Wrapper(nn.Module):
-    def __init__(self, model,weight=1.0,**kwargs):
+    def __init__(self, model,weight=1.0,sigma=1.0,**kwargs):
         super(RHC_Ranking_Wrapper, self).__init__()
         self.model = model
         self.weight = weight
+        self.sigma = sigma
 
     def forward(self,x,t,e):
         return self.weight*self.Rank(x,t,e) + self.RHC(x,t,e)
@@ -108,9 +109,8 @@ class RHC_Ranking_Wrapper(nn.Module):
         A = T * e
         #  only remains T_{ij}=1 when event occured for subject i
 
-        sigma1 = 1.0
         #
-        pairwise_ranking_loss = A * torch.exp(-G / sigma1)
+        pairwise_ranking_loss = A * torch.exp(-G / self.sigma)
 
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
         return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)

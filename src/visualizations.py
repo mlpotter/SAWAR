@@ -84,8 +84,8 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     X,T,E = dataloader.dataset.tensors
     t = torch.linspace(0,T.max(),10000)
 
-    St_robust_x = clf_robust.survival_qdf(E, t).detach()
-    St_fragile_x = clf_fragile.survival_qdf(E, t).detach()
+    St_robust_x = clf_robust.survival_qdf(X, t).detach()
+    St_fragile_x = clf_fragile.survival_qdf(X, t).detach()
 
     kmf = KaplanMeierFitter()
     kmf.fit(durations=T,event_observed=E)
@@ -160,34 +160,36 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader):
 
     t = torch.linspace(0,T.max(),1000)
 
-    rates_fragile = clf_fragile(X).detach()
-    rates_robust = clf_robust(X).detach()
+    q_fragile = clf_fragile.survival_qdf(X,t).detach()
+    q_robust = clf_robust.survival_qdf(X,t).detach()
 
-    a = sns.lineplot(x=t, y=torch.exp(-rates_robust.mean() * t), label='Average S(t)', ax=axes[0], linewidth=3.0)
-    b = sns.lineplot(x=t, y=torch.exp(-rates_robust.quantile(0.95) * t), label='Confidence', color='r', linewidth=3.0,
+    print(q_robust.shape)
+
+    a = sns.lineplot(x=t, y=q_robust.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[0])
+    b = sns.lineplot(x=t, y=q_robust.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[0])
-    c = sns.lineplot(x=t, y=torch.exp(-rates_robust.quantile(0.05) * t), label='Confidence', color='r', linewidth=3.0,
+    c = sns.lineplot(x=t, y=q_robust.quantile(0.05,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[0])
 
     line = c.get_lines()
     axes[0].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
-    axes[0].set_xlim([0, 1.05])
+    axes[0].set_ylim([0, 1.05])
     axes[0].set_xlabel("time");
     axes[0].set_ylabel("S(t)")
     # sns.scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
     axes[0].set_title("ROBUST")
     axes[0].legend()
 
-    a = sns.lineplot(x=t, y=torch.exp(-rates_fragile.mean() * t), label='Average S(t)', linewidth=3.0, ax=axes[1])
-    b = sns.lineplot(x=t, y=torch.exp(-rates_fragile.quantile(0.95) * t), label='Confidence', color='r', linewidth=3.0,
+    a = sns.lineplot(x=t, y=q_fragile.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[1])
+    b = sns.lineplot(x=t, y=q_fragile.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[1])
-    c = sns.lineplot(x=t, y=torch.exp(-rates_fragile.quantile(0.05) * t), label='Confidence', color='r', linewidth=3.0,
+    c = sns.lineplot(x=t, y=q_fragile.quantile(0.05,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[1])
 
     line = c.get_lines()
     axes[1].set_title("NON ROBUST")
     axes[1].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
-    axes[1].set_xlim([0, 1.05])
+    axes[1].set_ylim([0, 1.05])
     axes[1].set_xlabel("time");
     axes[1].set_ylabel("S(t)")
     # sns.scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
