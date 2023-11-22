@@ -81,7 +81,6 @@ def train_ranking(model, dataloader_train, optimizer, epochs, print_every=25, sa
 
     return torch.arange(epochs), train_loss
 
-    return torch.arange(epochs),train_loss
 
 # TODO: optimize min max?
 def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5,0.5],method='robust'):
@@ -128,6 +127,7 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
                                                bound_lower=False)
             robust_loss = ub.sum()
             loss = robust_loss
+
         elif batch_method == "natural":
             loss = regular_loss
 

@@ -40,7 +40,7 @@ def ranking_loss():
     pass
 
 class RightCensorWrapper(nn.Module):
-    def __init__(self,model):
+    def __init__(self,model,**kwargs):
         super(RightCensorWrapper,self).__init__()
         self.model = model
 
@@ -54,7 +54,7 @@ class RightCensorWrapper(nn.Module):
 
 
 class RankingWrapper(nn.Module):
-    def __init__(self, model):
+    def __init__(self, model,**kwargs):
         super(RankingWrapper, self).__init__()
         self.model = model
 
@@ -82,9 +82,9 @@ class RankingWrapper(nn.Module):
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
         return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
 
-class RHS_Ranking_Wrapper(nn.Module):
-    def __init__(self, model,weight=1.0):
-        super(RHS_Ranking_Wrapper, self).__init__()
+class RHC_Ranking_Wrapper(nn.Module):
+    def __init__(self, model,weight=1.0,**kwargs):
+        super(RHC_Ranking_Wrapper, self).__init__()
         self.model = model
         self.weight = weight
 
