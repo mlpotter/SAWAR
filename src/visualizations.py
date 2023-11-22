@@ -78,7 +78,7 @@ def visualize_individual_curves_changes(clf_robust,clf_fragile,dataloader,order=
     plt.ylabel("S(t)");
     plt.xlabel("Time")
     plt.title(f"Individual Survival Change Curves order={order}")
-def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsilons=[0.1]):
+def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsilons=[0.1],suptitle=""):
 
     plt.figure(figsize=(10,10))
     X,T,E = dataloader.dataset.tensors
@@ -126,9 +126,11 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     axes[1].set_title("Nonrobust Population Survival Curves")
     axes[1].set_ylim([0,1])
 
+    plt.suptitle(suptitle)
+    plt.tight_layout()
     plt.show()
 
-def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader):
+def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,suptitle=""):
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     X,_,_ = dataloader.dataset.tensors
 
@@ -150,7 +152,8 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader):
     axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
     axes[2].set_title("$\lambda$ Overlap")
     sns.histplot(data=plot_df, ax=axes[2], stat="density", legend=True)
-
+    plt.suptitle(suptitle)
+    plt.tight_layout()
     plt.show()
 
 def visualize_curve_distributions(clf_fragile,clf_robust,dataloader):
