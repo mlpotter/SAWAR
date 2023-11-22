@@ -118,6 +118,7 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
         # Make the input a BoundedTensor with the pre-defined perturbation.
         x_bounded = BoundedTensor(xi, ptb)
 
+
         regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
         meter.update('Loss', regular_loss.item(), xi.size(0))
 
@@ -157,7 +158,7 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
     ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     norm = float(args.norm)
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(args.num_epochs/10), gamma=0.5)
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(args.num_epochs/10), gamma=0.99)
 
     if method == "robust":
         scheduler_opts = args.scheduler_opts
@@ -182,7 +183,7 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
-            train_robust_step(model, t, dataloader_test, eps_scheduler, norm, False, None, bound_type=args.bound_type,pareto=args.pareto,method=method)
+            train_robust_step(model, t, dataloader_test, eps_scheduler, args.norm, False, None, bound_type=args.bound_type,pareto=args.pareto,method=method)
 
         if args.save_model != "":
             torch.save({'state_dict': model.state_dict(), 'epoch': t}, args.save_model)

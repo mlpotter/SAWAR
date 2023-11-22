@@ -138,6 +138,9 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     lambda_robust = clf_robust(X).detach()
     lambda_fragile = clf_fragile(X).detach()
 
+    lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]
+    lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]
+
     plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
 
     sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[0], stat="density", legend=False, color="blue")
@@ -156,7 +159,7 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     plt.tight_layout()
     plt.show()
 
-def visualize_curve_distributions(clf_fragile,clf_robust,dataloader):
+def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle=""):
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
     X,T,E = dataloader.dataset.tensors
@@ -198,4 +201,6 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader):
     # sns.scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
     axes[1].legend()
 
+    plt.suptitle(suptitle)
+    plt.tight_layout()
     plt.show()

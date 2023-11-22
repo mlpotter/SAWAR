@@ -54,10 +54,11 @@ class RightCensorWrapper(nn.Module):
 
 
 class RankingWrapper(nn.Module):
-    def __init__(self, model,sigma=1.0,**kwargs):
+    def __init__(self, model,weight=1.0,sigma=1.0,**kwargs):
         super(RankingWrapper, self).__init__()
         self.model = model
         self.sigma = sigma
+        self.weight = weight
 
     def forward(self, x, t, e):
         R = self.model.failure_cdf(x, t)
@@ -80,7 +81,7 @@ class RankingWrapper(nn.Module):
         pairwise_ranking_loss = A * torch.exp(-G / self.sigma)
 
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
-        return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
+        return self.weight*torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
 
 class RHC_Ranking_Wrapper(nn.Module):
     def __init__(self, model,weight=1.0,sigma=1.0,**kwargs):
@@ -113,7 +114,7 @@ class RHC_Ranking_Wrapper(nn.Module):
         pairwise_ranking_loss = A * torch.exp(-G / self.sigma)
 
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
-        return torch.mean(pairwise_ranking_loss, axis=1, keepdims=True)
+        return torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
     def RHC(self,x,t,e):
         rate = self.model(x)
 
