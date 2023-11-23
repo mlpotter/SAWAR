@@ -21,7 +21,7 @@ def concordance(clf, dataloader, epsilons):
             ub = torch.tensor(np.random.rand(*ub.shape))
             ci = 0  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
 
-        print("CI @ eps={}".format(epsilon), ci)
+        # print("CI @ eps={}".format(epsilon), ci)
 
         cis[i] = ci
 

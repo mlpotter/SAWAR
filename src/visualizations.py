@@ -78,7 +78,7 @@ def visualize_individual_curves_changes(clf_robust,clf_fragile,dataloader,order=
     plt.ylabel("S(t)");
     plt.xlabel("Time")
     plt.title(f"Individual Survival Change Curves order={order}")
-def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsilons=[0.1],suptitle=""):
+def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsilons=[0.1],suptitle="",img_path=""):
 
     plt.figure(figsize=(10,10))
     X,T,E = dataloader.dataset.tensors
@@ -103,12 +103,14 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
         axes[0].plot(t,St_lb.detach(),'--')
 
-
-
     axes[0].set_ylabel("S(t)"); axes[0].set_xlabel("Time")
     axes[0].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
     axes[0].set_title(f"Robust Population Survival Curves")
     axes[0].set_ylim([0,1])
+
+
+
+
 
     axes[1].plot(t,St_kmf,linewidth=3)
     axes[1].plot(t,St_fragile_x.mean(0),'k-',linewidth=3)
@@ -119,8 +121,6 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
         St_lb = torch.exp(-ub*t).mean(0)
         axes[1].plot(t,St_lb.detach(),'--')
 
-
-
     axes[1].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
     axes[1].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
     axes[1].set_title("Nonrobust Population Survival Curves")
@@ -128,9 +128,13 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
     plt.suptitle(suptitle)
     plt.tight_layout()
+
+    if img_path != "":
+        plt.savefig(os.path.join(img_path,f"population_curves_attacked_{suptitle}.png"))
+
     plt.show()
 
-def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,suptitle=""):
+def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     X,_,_ = dataloader.dataset.tensors
 
@@ -138,8 +142,9 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     lambda_robust = clf_robust(X).detach()
     lambda_fragile = clf_fragile(X).detach()
 
-    lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]
-    lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]
+    if len(lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]) == len(lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]):
+        lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]
+        lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]
 
     plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
 
@@ -157,9 +162,13 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     sns.histplot(data=plot_df, ax=axes[2], stat="density", legend=True)
     plt.suptitle(suptitle)
     plt.tight_layout()
+
+    if img_path != "":
+        plt.savefig(os.path.join(img_path,f"individual_lambda_histogram_{suptitle}.png"))
+
     plt.show()
 
-def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle=""):
+def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
     X,T,E = dataloader.dataset.tensors
@@ -203,4 +212,8 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="")
 
     plt.suptitle(suptitle)
     plt.tight_layout()
+
+    if img_path != "":
+        plt.savefig(os.path.join(img_path,f"curve_distributions_{suptitle}.png"))
+
     plt.show()

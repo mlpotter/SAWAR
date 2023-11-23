@@ -7,3 +7,4 @@
 *.pyc
 /derivations/
 *.ipynb_checkpoints
+/results/
