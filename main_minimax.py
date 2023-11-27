@@ -67,9 +67,17 @@ def main(args):
 
     epsilons = [2.0,1, .8, 0.7, .6, 0.5, 0.1, 0.07, 0.05, 0]
     eps_random, ci_random= concordance(clf_robust, dataloader_train, epsilons)
-    _, ci_random = concordance(clf_fragile, dataloader_train, epsilons)
-    df_ci_random = pd.DataFrame({"Random CI":ci_random},index=eps_random)
+    df_ci_random = pd.DataFrame({"RANDOM CI":ci_random},index=eps_random)
     print("Train Concordance Index RANDOM \n",df_ci_random)
+
+    eps_robust, ibs_random = ibs(clf_robust, dataloader_train, dataloader_test,epsilons)
+    df_ibs_random = pd.DataFrame({"RANDOM IBS":ibs_random},index=eps_robust)
+    print("Test Integrated Brier Score RANDOM \n",df_ibs_random)
+
+    eps_robust, neg_ll_random = rhc_neg_logll(clf_robust, dataloader_train,epsilons)
+    df_negll_random = pd.DataFrame({"RANDOM Neg LL":neg_ll_random},index=eps_robust)
+    print("Train Neg LL RANDOM \n",df_negll_random)
+
 
     # initialize the model objective wrappers and make BoundedModule
     wrapper = loss_wrapper(args.loss_wrapper)
