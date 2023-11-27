@@ -3,7 +3,7 @@ from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
 from src.load_data import load_datasets,load_dataframe
 from src.utils import train_robust,lower_bound
 from src.visualizations import *
-from src.metrics import concordance
+from src.metrics import concordance,ibs,rhc_neg_logll
 
 from torch.optim import Adam
 import torch
@@ -138,10 +138,21 @@ def main(args):
     df_ci_train = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
     print("Train Concordance Index \n",df_ci_train)
 
-    eps_robust, ci_robust = concordance(clf_robust, dataloader_train, epsilons)
-    _, ci_fragile = concordance(clf_fragile, dataloader_train, epsilons)
+    eps_robust, ci_robust = concordance(clf_robust, dataloader_test, epsilons)
+    _, ci_fragile = concordance(clf_fragile, dataloader_test, epsilons)
     df_ci_test = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
     print("Test Concordance Index \n",df_ci_test)
+
+
+    eps_robust, ibs_robust = ibs(clf_robust, dataloader_train, dataloader_test,epsilons)
+    _, ibs_fragile = ibs(clf_fragile, dataloader_train,dataloader_test, epsilons)
+    df_ibs_test = pd.DataFrame({"Robust CI":ibs_robust,"Non Robust CI":ibs_fragile},index=eps_robust)
+    print("Test Integrated Brier Score \n",df_ibs_test)
+
+    eps_robust, neg_ll_robust = rhc_neg_logll(clf_robust, dataloader_test,epsilons)
+    _, neg_ll_fragile = rhc_neg_logll(clf_fragile, dataloader_test, epsilons)
+    df_neg_ll_test = pd.DataFrame({"Robust CI":neg_ll_robust,"Non Robust CI":neg_ll_fragile},index=eps_robust)
+    print("Test NLL \n",df_neg_ll_test)
 
     # visualize the output of the neural network as function of data
     visualize_individual_lambda_histograms(clf_fragile, clf_robust, dataloader_train, suptitle="train",img_path=args.img_path)
@@ -169,6 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--weight', type=str, default="1.0", help='The weight for the comparison loss contribution')
     parser.add_argument('--num_epochs', type=int, default=150, help='The number of training epochs during optimization')
     parser.add_argument('--batch_size', type=int, default=512, help='The batch size during training')
+    # use 128 for the batch size ...
 
     # perturbation settings during training
     parser.add_argument('--scheduler_name', type=str,default='SmoothedScheduler',help='Scheduler for the pertubation adaptation during training')
