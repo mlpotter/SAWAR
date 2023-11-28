@@ -43,21 +43,23 @@ def loss_wrapper(loss_wrapper):
         raise Exception("not valid wrapper choice")
 
 def main(args):
-    df_train,df_test = load_dataframe(ds_name=args.dataset,drop_first=True)
-    dataset_train, dataset_test = load_datasets(args.dataset, test_size=0.2)
+    df_train,df_val,df_test = load_dataframe(ds_name=args.dataset,drop_first=True)
+    dataset_train, dataset_val, dataset_test = load_datasets(args.dataset, test_size=0.2)
     input_dims = dataset_train.tensors[0].shape[1]
     output_dim = 1
 
     # load the datasets
     dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True)
+    dataloader_val = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=False)
     dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False)
 
     # set the dataloader mean and std ... not needed right now
-    dataloader_train.mean = dataloader_test.mean = dataset_train.mean
-    dataloader_train.std = dataloader_test.std = dataset_train.std
+    dataloader_train.mean = dataloader_val.mean = dataloader_test.mean = dataset_train.mean
+    dataloader_train.std = dataloader_val.mean = dataloader_test.std = dataset_train.std
 
     print(f"The train dataset shape {dataset_train.tensors[0].shape}")
-    print(f"The test dataset shape {dataset_train.tensors[0].shape}")
+    print(f"The val dataset shape {dataset_val.tensors[0].shape}")
+    print(f"The test dataset shape {dataset_test.tensors[0].shape}")
 
     # initialize the Neural Network models (exponential models)
     clf_robust = Exponential_Model(input_dim=input_dims,hidden_layers=args.hidden_dims)

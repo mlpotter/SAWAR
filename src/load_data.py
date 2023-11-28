@@ -44,21 +44,27 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # Train-Test split for loading the data
     X_train,X_test, time_train,time_test, event_train,event_test = train_test_split(X,time,event,stratify=event,test_size=test_size)
 
+    # Train-Val split for loading the data
+    val_size = 0.2/(1-test_size)
+    X_train,X_val, time_train,time_val, event_train,event_val = train_test_split(X_train,time_train,event_train,stratify=event_train,test_size=val_size)
+
 
     if normalize:
         std = StandardScaler()
         X_train = std.fit_transform(X_train)
+        X_val = std.transform(X_val)
         X_test = std.transform(X_test)
-        X_train,X_test = numpy_to_tensor((X_train,X_test))
+        X_train,X_val,X_test = numpy_to_tensor((X_train,X_val,X_test))
 
     dataset_train = TensorDataset(X_train,time_train,event_train)
+    dataset_val = TensorDataset(X_val,time_val,event_val)
     dataset_test = TensorDataset(X_test,time_test,event_test)
 
     if normalize:
-        dataset_train.mean = dataset_test.mean = torch.Tensor(std.mean_).reshape(1,-1)
-        dataset_train.std = dataset_test.std = torch.Tensor(std.scale_).reshape(1,-1)
+        dataset_train.mean = dataset_val.mean =  dataset_test.mean = torch.Tensor(std.mean_).reshape(1,-1)
+        dataset_train.std = dataset_val.std = dataset_test.std = torch.Tensor(std.scale_).reshape(1,-1)
 
-    return dataset_train,dataset_test
+    return dataset_train,dataset_val,dataset_test
 
 def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # SurvLoader to load in time to event datasets
@@ -69,7 +75,7 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
 
     if ds_name in ["Aids2","Framingham","dataDIVAT1"]:
         data_df.time = data_df.time/365
-    elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate"]:
+    elif ds_name == ["rott2", "divorce", "gse4335", "nki70", "prostate"]:
         data_df.time = data_df.time/12
 
     # one hot encode all the "fac" categorical variables
@@ -81,18 +87,24 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # Train-Test split for loading the data
     data_train,data_test = train_test_split(data_df_ohe,stratify=data_df_ohe.event,test_size=test_size)
 
+    # Train-Val split for loading the data
+    val_size = 0.2/(1-test_size)
+    data_train,data_val = train_test_split(data_train,stratify=data_train.event,test_size=val_size)
+
     features = [col for col in data_train.columns if col not in ["event","time"]]
 
     if normalize:
         std = StandardScaler()
         data_train.loc[:,features] = std.fit_transform(data_train.loc[:,features])
+        data_val.loc[:,features] = std.fit_transform(data_val.loc[:,features])
         data_test.loc[:, features] = std.transform(data_test.loc[:, features])
 
-    return data_train,data_test
+    return data_train,data_val,data_test
 if __name__ == "__main__":
-    dataset_train,dataset_test = load_datasets()
+    dataset_train,dataset_val,dataset_test = load_datasets()
 
     print("Train len: ",len(dataset_train))
+    print("Val len: ",len(dataset_val))
     print("Test len: ",len(dataset_test))
 
     load_dataframe(ds_name="ova",normalize=True,test_size=0.2)
