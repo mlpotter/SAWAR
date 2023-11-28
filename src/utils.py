@@ -8,9 +8,11 @@ from auto_LiRPA.utils import MultiAverageMeter
 from auto_LiRPA.eps_scheduler import LinearScheduler, AdaptiveScheduler, SmoothedScheduler, FixedScheduler
 import random
 import numpy as np
+from copy import deepcopy
 from torch import optim
 
 from src.criterion import RightCensorWrapper,right_censored,ranking_loss
+
 
 # TODO: customize for the right censored data analysis or exact time data analysis
 def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_pth=None):
@@ -94,6 +96,7 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
         model_loss.eval()
         eps_scheduler.eval()
 
+    epoch_loss = 0
     for i, data in enumerate(loader):
         start = time.time()
         eps_scheduler.step_batch()
@@ -132,12 +135,15 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
         elif batch_method == "natural":
             loss = regular_loss
 
+        combined_loss = ((pareto[0] * loss) + (pareto[1] * regular_loss))
         if train:
-            combined_loss = ((pareto[0] * loss) + (pareto[1] * regular_loss) )
             combined_loss.backward()
 
             eps_scheduler.update_loss(loss.item() - regular_loss.item())
             opt.step()
+
+        epoch_loss += combined_loss.detach().item()
+
         meter.update('Loss', loss.item(), xi.size(0))
         if batch_method != "natural":
             meter.update('Robust_Loss', robust_loss.item(), xi.size(0))
@@ -147,7 +153,9 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
             print('[{:2d}:{:4d}]: eps={:.8f} {}'.format(t, i, eps, meter))
     print('[{:2d}:{:4d}]: eps={:.8f} {}'.format(t, i, eps, meter))
 
-def train_robust(model,dataloader_train,dataloader_test,method,args):
+    return epoch_loss
+
+def train_robust(model,dataloader_train,dataloader_val,method,args):
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     random.seed(args.seed)
@@ -170,6 +178,8 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
 
 
     timer = 0.0
+    best_val_loss = np.inf
+    best_epoch = 0
     for t in range(1, args.num_epochs+1):
         if eps_scheduler.reached_max_eps():
             # Only decay learning rate after reaching the maximum eps
@@ -177,16 +187,30 @@ def train_robust(model,dataloader_train,dataloader_test,method,args):
         print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
         # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
-        train_robust_step(model, t, dataloader_train, eps_scheduler, args.norm, True, optimizer,bound_type=args.bound_type,pareto=args.pareto,method=method)
+        train_robust_step(model, t, dataloader_train, eps_scheduler, norm=args.norm, train=True, opt=optimizer,bound_type=args.bound_type,pareto=args.pareto,method=method)
         epoch_time = time.time() - start_time
         timer += epoch_time
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
-            train_robust_step(model, t, dataloader_test, eps_scheduler, args.norm, False, None, bound_type=args.bound_type,pareto=args.pareto,method=method)
+
+            val_epoch_loss = train_robust_step(model, t, dataloader_val, eps_scheduler, norm=args.norm, train=False, opt=None, bound_type=args.bound_type,pareto=args.pareto,method=method)
+            if method == "robust":
+                if (best_val_loss > val_epoch_loss) and (eps_scheduler.reached_max_eps()):
+                    best_state_dict = deepcopy(model.state_dict())
+                    best_val_loss = val_epoch_loss
+                    best_epoch = t
+            elif method == "natural":
+                if (best_val_loss > val_epoch_loss):
+                    best_state_dict = deepcopy(model.state_dict())
+                    best_val_loss = val_epoch_loss
+                    best_epoch = t
 
         if args.save_model != "":
             torch.save({'state_dict': model.state_dict(), 'epoch': t}, args.save_model)
+
+    print(f"Best Validation Loss {best_val_loss} @ {best_epoch}")
+    model.load_state_dict(best_state_dict)
 
 def lower_bound(clf, nominal_input, epsilon):
     # Wrap the model with auto_LiRPA.

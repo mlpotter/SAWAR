@@ -87,8 +87,8 @@ def main(args):
     model_fragile_wrap = BoundedModule(wrapper(clf_fragile,weight=args.weight,sigma=args.sigma),dataloader_train.dataset.tensors)
 
     # train models (robust and nonrobust)
-    train_robust(model_robust_wrap, dataloader_train, dataloader_test, method="robust", args=args)
-    train_robust(model_fragile_wrap, dataloader_train, dataloader_test, method="natural", args=args)
+    train_robust(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
+    train_robust(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
 
     # get the train tensors (X,T,E)
     X_train, T_train, E_train = dataloader_train.dataset.tensors
