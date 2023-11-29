@@ -92,12 +92,12 @@ if __name__ == "__main__":
         temp_df = pd.read_excel(NegLL_excel)
         dataset_name = NegLL_excel.split("\\")[1]
         temp_df.columns = ["eps"] + temp_df.columns[1:].to_list()
-        NegLL_df[dataset_name] = temp_df["Non Robust NegLL"].round(3).astype(str) + " / " + temp_df["Robust NegLL"].round(3).astype(str)
+        NegLL_df[dataset_name] = temp_df["Non Robust NegLL"].round(3).apply(lambda x: "{:.2e}".format(x)) + " / " + temp_df["Robust NegLL"].round(3).apply(lambda x: "{:.2e}".format(x))
         percentage_change.append( (temp_df["Non Robust NegLL"] - temp_df["Robust NegLL"]) / np.abs(temp_df["Robust NegLL"]) * 100)
 
     NegLL_df = NegLL_df.reindex(sorted(NegLL_df.columns),axis=1)
     NegLL_df.insert(0,"eps",temp_df.eps)
     perc_df = pd.concat(percentage_change, axis=1)
-    NegLL_df["%"] = perc_df.mean(axis=1)
+    NegLL_df["%"] = perc_df.mean(axis=1).apply(lambda x: "{:.2e}".format(x))
     NegLL_df.to_excel(os.path.join("results","NegLL_all.xlsx"),index=False)
     print("NegLL",NegLL_df)

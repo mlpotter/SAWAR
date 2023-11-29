@@ -93,35 +93,35 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
 
     fig,axes = plt.subplots(1,2,figsize=(20,10))
-    axes[0].plot(t,St_kmf,linewidth=3)
-    axes[0].plot(t,St_fragile_x.mean(0),'k-',linewidth=3)
-    axes[0].plot(t,St_robust_x.mean(0),'r-',linewidth=3)
-
-    for epsilon in epsilons:
-        lb,ub = lower_bound(clf_robust,X,epsilon)
-        St_lb = torch.exp(-ub*t).mean(0)
-
-        axes[0].plot(t,St_lb.detach(),'--')
-
-    axes[0].set_ylabel("S(t)"); axes[0].set_xlabel("Time")
-    axes[0].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
-    axes[0].set_title(f"Robust Population Survival Curves")
-    axes[0].set_ylim([0,1])
-
-
     axes[1].plot(t,St_kmf,linewidth=3)
     axes[1].plot(t,St_fragile_x.mean(0),'k-',linewidth=3)
     axes[1].plot(t,St_robust_x.mean(0),'r-',linewidth=3)
 
     for epsilon in epsilons:
-        lb,ub = lower_bound(clf_fragile,X,epsilon)
+        lb,ub = lower_bound(clf_robust,X,epsilon)
         St_lb = torch.exp(-ub*t).mean(0)
+
         axes[1].plot(t,St_lb.detach(),'--')
 
-    axes[1].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
+    axes[1].set_ylabel("S(t)"); axes[0].set_xlabel("Time")
     axes[1].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
-    axes[1].set_title("Nonrobust Population Survival Curves")
+    axes[1].set_title(f"Robust Population Survival Curves")
     axes[1].set_ylim([0,1])
+
+
+    axes[0].plot(t,St_kmf,linewidth=3)
+    axes[0].plot(t,St_fragile_x.mean(0),'k-',linewidth=3)
+    axes[0].plot(t,St_robust_x.mean(0),'r-',linewidth=3)
+
+    for epsilon in epsilons:
+        lb,ub = lower_bound(clf_fragile,X,epsilon)
+        St_lb = torch.exp(-ub*t).mean(0)
+        axes[0].plot(t,St_lb.detach(),'--')
+
+    axes[0].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
+    axes[0].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
+    axes[0].set_title("Nonrobust Population Survival Curves")
+    axes[0].set_ylim([0,1])
 
     plt.suptitle(suptitle)
     plt.tight_layout()
@@ -145,14 +145,14 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
 
     plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
 
-    sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[0], stat="density", legend=False, color="blue")
-    axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
-    axes[0].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_robust.mean(),lambda_robust.var()))
-
+    sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[1], stat="density", legend=False, color="blue")
     axes[1].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
-    axes[1].set_title("$\lambda$ Fragile")
-    sns.histplot(data=plot_df, x="Lambda Fragile", ax=axes[1], stat="density", legend=False, color="orange")
-    axes[1].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_fragile.mean(),lambda_fragile.var()))
+    axes[1].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_robust.mean(),lambda_robust.var()))
+
+    axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
+    axes[0].set_title("$\lambda$ Fragile")
+    sns.histplot(data=plot_df, x="Lambda Fragile", ax=axes[0], stat="density", legend=False, color="orange")
+    axes[0].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_fragile.mean(),lambda_fragile.var()))
 
     axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
     axes[2].set_title("$\lambda$ Overlap")
@@ -177,35 +177,35 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
 
     print(q_robust.shape)
 
-    a = sns.lineplot(x=t, y=q_robust.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[0])
+    a = sns.lineplot(x=t, y=q_robust.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[1])
     b = sns.lineplot(x=t, y=q_robust.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
-                     ax=axes[0])
+                     ax=axes[1])
     c = sns.lineplot(x=t, y=q_robust.quantile(0.05,dim=0), label='Confidence', color='r', linewidth=3.0,
+                     ax=axes[1])
+
+    line = c.get_lines()
+    axes[1].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
+    axes[1].set_ylim([0, 1.05])
+    axes[1].set_xlabel("time");
+    axes[1].set_ylabel("S(t)")
+    # sns1scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
+    axes[1].set_title("ROBUST")
+    axes[1].legend()
+
+    a = sns.lineplot(x=t, y=q_fragile.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[0])
+    b = sns.lineplot(x=t, y=q_fragile.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
+                     ax=axes[0])
+    c = sns.lineplot(x=t, y=q_fragile.quantile(0.05,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[0])
 
     line = c.get_lines()
+    axes[0].set_title("NON ROBUST")
     axes[0].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
     axes[0].set_ylim([0, 1.05])
     axes[0].set_xlabel("time");
     axes[0].set_ylabel("S(t)")
     # sns.scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
-    axes[0].set_title("ROBUST")
     axes[0].legend()
-
-    a = sns.lineplot(x=t, y=q_fragile.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[1])
-    b = sns.lineplot(x=t, y=q_fragile.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
-                     ax=axes[1])
-    c = sns.lineplot(x=t, y=q_fragile.quantile(0.05,dim=0), label='Confidence', color='r', linewidth=3.0,
-                     ax=axes[1])
-
-    line = c.get_lines()
-    axes[1].set_title("NON ROBUST")
-    axes[1].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
-    axes[1].set_ylim([0, 1.05])
-    axes[1].set_xlabel("time");
-    axes[1].set_ylabel("S(t)")
-    # sns.scatterplot(x =df_sat_test['t'], y = np.array(test_ppc.observed_data.obs), label = 'True Value')
-    axes[1].legend()
 
     plt.suptitle(suptitle)
     plt.tight_layout()
