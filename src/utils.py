@@ -85,7 +85,7 @@ def train_ranking(model, dataloader_train, optimizer, epochs, print_every=25, sa
 
 
 # TODO: optimize min max?
-def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5,0.5],method='robust'):
+def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5,0.5],method='robust',device="cpu"):
     meter = MultiAverageMeter()
     if train:
         model_loss.train()
@@ -96,12 +96,15 @@ def train_robust_step(model_loss, t, loader, eps_scheduler, norm, train, opt, bo
         model_loss.eval()
         eps_scheduler.eval()
 
+    # model_loss.to(device)
     epoch_loss = 0
     for i, data in enumerate(loader):
         start = time.time()
         eps_scheduler.step_batch()
         eps = eps_scheduler.get_eps()
         xi, ti, yi = data
+
+        # xi = xi.to(device); ti = ti.to(device); yi = ti.to(device)
 
         # For small eps just use natural training, no need to compute LiRPA bounds
         batch_method = method
@@ -180,6 +183,10 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
     timer = 0.0
     best_val_loss = np.inf
     best_epoch = 0
+    window = []
+    loss_train = np.zeros((args.num_epochs,))
+    loss_val = np.zeros((args.num_epochs,))
+
     for t in range(1, args.num_epochs+1):
         if eps_scheduler.reached_max_eps():
             # Only decay learning rate after reaching the maximum eps
@@ -187,30 +194,45 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
         print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
         # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
-        train_robust_step(model, t, dataloader_train, eps_scheduler, norm=args.norm, train=True, opt=optimizer,bound_type=args.bound_type,pareto=args.pareto,method=method)
+        train_epoch_loss = train_robust_step(model, t, dataloader_train, eps_scheduler, norm=args.norm, train=True, opt=optimizer,bound_type=args.bound_type,pareto=args.pareto,method=method,device=args.device)
         epoch_time = time.time() - start_time
         timer += epoch_time
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
+            # how to clean up this...
+            val_epoch_loss = train_robust_step(model, t, dataloader_val, eps_scheduler, norm=args.norm, train=False, opt=None, bound_type=args.bound_type,pareto=args.pareto,method=method,device=args.device)
 
-            val_epoch_loss = train_robust_step(model, t, dataloader_val, eps_scheduler, norm=args.norm, train=False, opt=None, bound_type=args.bound_type,pareto=args.pareto,method=method)
+            if len(window) < args.smooth_window:
+                window.append(val_epoch_loss)
+                val_epoch_smoothed = np.mean(window)
+            else:
+                window[:-1] = window[1:]
+                window[-1] = val_epoch_loss
+                val_epoch_smoothed = np.mean(window)
+
             if method == "robust":
-                if (best_val_loss > val_epoch_loss) and (eps_scheduler.reached_max_eps()):
+                if (best_val_loss > val_epoch_smoothed) and (eps_scheduler.reached_max_eps()):
                     best_state_dict = deepcopy(model.state_dict())
-                    best_val_loss = val_epoch_loss
+                    best_val_loss = val_epoch_smoothed
                     best_epoch = t
+
             elif method == "natural":
                 if (best_val_loss > val_epoch_loss):
                     best_state_dict = deepcopy(model.state_dict())
-                    best_val_loss = val_epoch_loss
+                    best_val_loss = val_epoch_smoothed
                     best_epoch = t
 
         if args.save_model != "":
             torch.save({'state_dict': model.state_dict(), 'epoch': t}, args.save_model)
 
+        loss_train[t-1] = train_epoch_loss
+        loss_val[t-1] = val_epoch_loss
+
     print(f"Best Validation Loss {best_val_loss} @ {best_epoch}")
     model.load_state_dict(best_state_dict)
+
+    return np.arange(args.num_epochs),loss_train,loss_val
 
 def lower_bound(clf, nominal_input, epsilon):
     # Wrap the model with auto_LiRPA.

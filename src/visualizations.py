@@ -217,3 +217,25 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
         plt.savefig(os.path.join(img_path,f"curve_distributions_{suptitle}.png"))
 
     plt.show()
+
+def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_robust,loss_val_robust,suptitle="",img_path=""):
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+
+
+    axes[0].plot(epochs,loss_tr_fragile)
+    axes[0].plot(epochs,loss_val_fragile)
+    axes[0].set_title("Robust Learning Curve")
+    axes[0].legend(["Train","Validation"])
+
+    axes[1].plot(epochs, loss_tr_robust)
+    axes[1].plot(epochs, loss_val_robust)
+    axes[1].set_title("Robust Learning Curve")
+    axes[1].legend(["Train", "Validation"])
+
+    plt.suptitle(suptitle)
+    plt.tight_layout()
+
+    if img_path != "":
+        plt.savefig(os.path.join(img_path,f"train_val_{suptitle}.png"))
+
+    plt.show()

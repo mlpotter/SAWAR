@@ -87,8 +87,8 @@ def main(args):
     model_fragile_wrap = BoundedModule(wrapper(clf_fragile,weight=args.weight,sigma=args.sigma),dataloader_train.dataset.tensors)
 
     # train models (robust and nonrobust)
-    train_robust(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
-    train_robust(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
+    _,loss_tr_robust,loss_val_robust = train_robust(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
+    epochs,loss_tr_fragile,loss_val_fragile = train_robust(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
 
     # get the train tensors (X,T,E)
     X_train, T_train, E_train = dataloader_train.dataset.tensors
@@ -164,6 +164,9 @@ def main(args):
     df_neg_ll_test = pd.DataFrame({"Robust CI":neg_ll_robust,"Non Robust CI":neg_ll_fragile},index=eps_robust)
     print("Test NLL \n",df_neg_ll_test)
 
+    visualize_learning_curves(epochs, loss_tr_fragile, loss_val_fragile, loss_tr_robust, loss_val_robust, suptitle="Learning Curves",
+                              img_path=args.img_path)
+
     # visualize the output of the neural network as function of data
     visualize_individual_lambda_histograms(clf_fragile, clf_robust, dataloader_train, suptitle="train",img_path=args.img_path)
 
@@ -190,6 +193,8 @@ if __name__ == "__main__":
     parser.add_argument('--weight', type=str, default="1.0", help='The weight for the comparison loss contribution')
     parser.add_argument('--num_epochs', type=int, default=150, help='The number of training epochs during optimization')
     parser.add_argument('--batch_size', type=int, default=512, help='The batch size during training')
+    parser.add_argument('--smooth_window', type=int, default=5, help='The smoothing window size for early stopping')
+
     # use 128 for the batch size ...
 
     # perturbation settings during training
@@ -200,6 +205,7 @@ if __name__ == "__main__":
     parser.add_argument('--norm', type=float, default=np.inf, help='The norm to use for the epsilon ball')
     parser.add_argument('--pareto', type=str, default="0.1 0.9", help='The weighted combination between the normal objective and the autolirpa upper bound')
     parser.add_argument('--verify', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--cuda', action=argparse.BooleanOptionalAction)
 
     # neural network information
     parser.add_argument('--hidden_dims', type=str, default="50 50", help='The number of neurons in each hidden layers')
@@ -214,6 +220,9 @@ if __name__ == "__main__":
     args.weight = eval(args.weight)
 
 
+    device = "cuda:0" if (torch.cuda.is_available() and args.cuda) else "cpu"
+
+    args.device = device
 
     print(f"Dataset Analyzed {args.dataset}")
     print(f"Objective Function {args.loss_wrapper}")
