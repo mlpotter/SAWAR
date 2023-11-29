@@ -221,7 +221,7 @@ def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_ro
 
     axes[0].plot(epochs,loss_tr_fragile)
     axes[0].plot(epochs,loss_val_fragile)
-    axes[0].set_title("Robust Learning Curve")
+    axes[0].set_title("Non Robust Learning Curve")
     axes[0].legend(["Train","Validation"])
 
     axes[1].plot(epochs, loss_tr_robust)
