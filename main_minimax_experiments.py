@@ -19,7 +19,7 @@ hyperparameters = [
 '--dataset=Aids2 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
 '--dataset=Framingham --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
 '--dataset=dataDIVAT1 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=prostate --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=32 --weight=1/32 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+'--dataset=prostate --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=16 --weight=1/16 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
 ]
 
 

@@ -221,7 +221,7 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
                     best_epoch = t
 
             elif method == "natural":
-                if (best_val_loss > val_epoch_loss):
+                if (best_val_loss > val_epoch_smoothed):
                     best_state_dict = deepcopy(model.state_dict())
                     best_val_loss = val_epoch_smoothed
                     best_epoch = t
