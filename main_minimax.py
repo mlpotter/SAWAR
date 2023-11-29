@@ -171,7 +171,8 @@ def main(args):
                               img_path=args.img_path)
 
     # visualize the output of the neural network as function of data
-    visualize_individual_lambda_histograms(clf_fragile, clf_robust, dataloader_train, suptitle="train",img_path=args.img_path)
+    if args.dataset not in ["prostate"]:
+        visualize_individual_lambda_histograms(clf_fragile, clf_robust, dataloader_train, suptitle="train",img_path=args.img_path)
 
     # visualize the randomness of the survival curves from data
     visualize_curve_distributions(clf_fragile,clf_robust,dataloader_train,suptitle="train")

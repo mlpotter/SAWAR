@@ -109,9 +109,6 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     axes[0].set_ylim([0,1])
 
 
-
-
-
     axes[1].plot(t,St_kmf,linewidth=3)
     axes[1].plot(t,St_fragile_x.mean(0),'k-',linewidth=3)
     axes[1].plot(t,St_robust_x.mean(0),'r-',linewidth=3)
@@ -142,22 +139,22 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     lambda_robust = clf_robust(X).detach()
     lambda_fragile = clf_fragile(X).detach()
 
-    if len(lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]) == len(lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]):
-        lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.99)]
-        lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.99)]
+    if len(lambda_robust[lambda_robust < lambda_robust.quantile(0.98)]) == len(lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.98)]):
+        lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.98)]
+        lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.98)]
 
     plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
 
     sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[0], stat="density", legend=False, color="blue")
-    axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
     axes[0].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_robust.mean(),lambda_robust.var()))
 
-    axes[1].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[1].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
     axes[1].set_title("$\lambda$ Fragile")
     sns.histplot(data=plot_df, x="Lambda Fragile", ax=axes[1], stat="density", legend=False, color="orange")
     axes[1].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_fragile.mean(),lambda_fragile.var()))
 
-    axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.99)])
+    axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
     axes[2].set_title("$\lambda$ Overlap")
     sns.histplot(data=plot_df, ax=axes[2], stat="density", legend=True)
     plt.suptitle(suptitle)
