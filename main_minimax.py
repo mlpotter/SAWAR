@@ -151,17 +151,20 @@ def main(args):
     eps_robust, ci_robust = concordance(clf_robust, dataloader_test, epsilons)
     _, ci_fragile = concordance(clf_fragile, dataloader_test, epsilons)
     df_ci_test = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
+    df_ci_test.to_excel(os.path.join(args.img_path,"CI.xlsx"))
     print("Test Concordance Index \n",df_ci_test)
 
 
     eps_robust, ibs_robust = ibs(clf_robust, dataloader_train, dataloader_test,epsilons)
     _, ibs_fragile = ibs(clf_fragile, dataloader_train,dataloader_test, epsilons)
     df_ibs_test = pd.DataFrame({"Robust CI":ibs_robust,"Non Robust CI":ibs_fragile},index=eps_robust)
+    df_ibs_test.to_excel(os.path.join(args.img_path,"IBS.xlsx"))
     print("Test Integrated Brier Score \n",df_ibs_test)
 
     eps_robust, neg_ll_robust = rhc_neg_logll(clf_robust, dataloader_test,epsilons)
     _, neg_ll_fragile = rhc_neg_logll(clf_fragile, dataloader_test, epsilons)
     df_neg_ll_test = pd.DataFrame({"Robust CI":neg_ll_robust,"Non Robust CI":neg_ll_fragile},index=eps_robust)
+    df_neg_ll_test.to_excel(os.path.join(args.img_path,"NegLL.xlsx"))
     print("Test NLL \n",df_neg_ll_test)
 
     visualize_learning_curves(epochs, loss_tr_fragile, loss_val_fragile, loss_tr_robust, loss_val_robust, suptitle="Learning Curves",
@@ -209,7 +212,6 @@ if __name__ == "__main__":
 
     # neural network information
     parser.add_argument('--hidden_dims', type=str, default="50 50", help='The number of neurons in each hidden layers')
-    parser.add_argument('--device', type=str, default="cpu", help='The device to run on (only cpu right now)')
     parser.add_argument('--save_model',type=str,default="",help="The Neural Network parameters .pth save")
 
 
