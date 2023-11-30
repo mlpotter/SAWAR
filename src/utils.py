@@ -16,10 +16,10 @@ from src.criterion import RightCensorWrapper,right_censored,ranking_loss
 from csv import writer
 from csv import reader
 
-def pgd(model_loss, original_data, t, event, attack_magnitude, iters=10):
+@torch.enable_grad()
+def pgd(model_loss, original_data, t, event, attack_magnitude, iters=1):
     #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = "cpu"
-    original_data.to(device)
+
     perturbed_data = original_data
     #loss = model_loss
     original_images = perturbed_data.data
@@ -32,6 +32,7 @@ def pgd(model_loss, original_data, t, event, attack_magnitude, iters=10):
         perturbed_data.requires_grad = True
         
         #outputs = model((perturbed_data))
+
         cost = (model_loss(perturbed_data, t, event)).sum()
         cost.backward()
         sign_gradient = perturbed_data.grad.sign()
@@ -159,7 +160,7 @@ def train_robust_step_pgd(model_loss, t, loader, eps_scheduler, norm, train, opt
             #                                    bound_lower=False)
             # robust_loss = ub.sum()
             # loss = robust_loss
-            xi_ptb = pgd(model_loss, xi, ti, yi, eps, iters=10)
+            xi_ptb = pgd(model_loss, xi, ti, yi, eps, iters=1)
 
             
             robust_loss = model_loss(xi_ptb , ti, yi).sum()

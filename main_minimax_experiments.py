@@ -52,7 +52,7 @@ if __name__ == "__main__":
         dataset_name = ci_excel.split("\\")[1]
         temp_df.columns = ["eps"] + temp_df.columns[1:].to_list()
         CI_df[dataset_name] = temp_df["Non Robust CI"].round(3).astype(str) + " / " + temp_df["Robust CI"].round(3).astype(str)
-        percentage_change.append( (temp_df["Non Robust CI"] - temp_df["Robust CI"]) / np.abs(temp_df["Robust CI"]) * 100)
+        percentage_change.append( (temp_df["Robust CI"] - temp_df["Non Robust CI"]) / np.abs(temp_df["Non Robust CI"]) * 100)
 
     CI_df = CI_df.reindex(sorted(CI_df.columns),axis=1)
     CI_df.insert(0,"eps",temp_df.eps)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         dataset_name = IBS_excel.split("\\")[1]
         temp_df.columns = ["eps"] + temp_df.columns[1:].to_list()
         IBS_df[dataset_name] = temp_df["Non Robust IBS"].round(3).astype(str) + " / " + temp_df["Robust IBS"].round(3).astype(str)
-        percentage_change.append( (temp_df["Non Robust IBS"] - temp_df["Robust IBS"]) / np.abs(temp_df["Robust IBS"]) * 100)
+        percentage_change.append( (temp_df["Robust IBS"] - temp_df["Non Robust IBS"]) / np.abs(temp_df["Non Robust IBS"]) * 100)
 
     IBS_df = IBS_df.reindex(sorted(IBS_df.columns),axis=1)
     IBS_df.insert(0,"eps",temp_df.eps)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         dataset_name = NegLL_excel.split("\\")[1]
         temp_df.columns = ["eps"] + temp_df.columns[1:].to_list()
         NegLL_df[dataset_name] = temp_df["Non Robust NegLL"].round(3).apply(lambda x: "{:.2e}".format(x)) + " / " + temp_df["Robust NegLL"].round(3).apply(lambda x: "{:.2e}".format(x))
-        percentage_change.append( (temp_df["Non Robust NegLL"] - temp_df["Robust NegLL"]) / np.abs(temp_df["Robust NegLL"]) * 100)
+        percentage_change.append( (temp_df["Robust NegLL"] - temp_df["Non Robust NegLL"]) / np.abs(temp_df["Non Robust NegLL"]) * 100)
 
     NegLL_df = NegLL_df.reindex(sorted(NegLL_df.columns),axis=1)
     NegLL_df.insert(0,"eps",temp_df.eps)

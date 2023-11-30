@@ -230,7 +230,7 @@ if __name__ == "__main__":
     print(f"Dataset Analyzed {args.dataset}")
     print(f"Objective Function {args.loss_wrapper}")
 
-    img_path = os.path.join("results_pgd",args.dataset)
+    img_path = os.path.join("results/results_pgd",args.dataset)
     os.makedirs(img_path, exist_ok=True)
 
     args.img_path = img_path
