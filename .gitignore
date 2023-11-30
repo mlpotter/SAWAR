@@ -1,4 +1,5 @@
 /PPTs/
+.virtual_documents/
 /images/
 .idea/**
 .idea/modules.xml
