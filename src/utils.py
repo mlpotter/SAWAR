@@ -1,6 +1,6 @@
 import torch
 from tqdm import tqdm
-
+import time
 import time
 from auto_LiRPA import BoundedModule, BoundedTensor
 from auto_LiRPA.perturbations import *
@@ -16,6 +16,34 @@ from src.criterion import RightCensorWrapper,right_censored,ranking_loss
 from csv import writer
 from csv import reader
 
+def pgd(model, original_data, t, event, attack_magnitude, criterion):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    original_data.to(device)
+    perturbed_data = original_data
+    loss = criterion
+    original_images = perturbed_data.data
+    
+    alpha = attack_magnitude
+    iters = 300
+    time.sleep(1)
+    
+    for i in range(iters) : 
+        model.zero_grad()
+
+        perturbed_data.requires_grad = True
+        
+        #outputs = model((perturbed_data))
+        cost = loss(model(perturbed_data), t, event).to(device)
+        cost.backward()
+        sign_gradient = perturbed_data.grad.sign()
+        perturbed_data = perturbed_data.detach()
+        
+        perturbed_data = perturbed_data+ alpha*sign_gradient
+
+        difference = torch.clip(perturbed_data - original_images, min=-attack_magnitude, max=attack_magnitude)
+        perturbed_data = original_images+difference
+
+    return perturbed_data
 
 # TODO: customize for the right censored data analysis or exact time data analysis
 def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_pth=None):
@@ -34,7 +62,7 @@ def train(model,dataloader_train,optimizer,criterion,epochs,print_every=25,save_
             # forward + backward + optimize
             rate= model(xi)
 
-            loss = criterion(rate,ti,yi)
+            loss = criterion(rate,ti,yi)+criterion(pgd(model, xi, ti, yi, 2., criterion), ti, yi)
             loss.backward()
             optimizer.step()
 
