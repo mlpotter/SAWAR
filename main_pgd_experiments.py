@@ -13,32 +13,32 @@ import pandas as pd
 import time
 
 hyperparameters = [
-'--dataset=TRACE --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=divorce --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=Dialysis --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=Aids2 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=Framingham --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=dataDIVAT1 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-'--dataset=prostate --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=16 --weight=1/16 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+'--dataset=TRACE --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=divorce --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=Dialysis --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=Aids2 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=Framingham --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=dataDIVAT1 --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
+'--dataset=prostate --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=16 --weight=1/16 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50" --pgd_iter=10',
 ]
 
-results_folder = "results/results_minimax"
+results_folder = "results/results_pgd"
 
 if __name__ == "__main__":
-    processes = []
-    for hyperparam in hyperparameters:
-        file_full = f"python main_minimax.py {hyperparam}"
-        print(file_full)
-        # os.system(file_full)
-        p = Popen(file_full, creationflags=CREATE_NEW_CONSOLE)
-        processes.append(p)
-
-
-
-    finished = False
-    while not finished:
-        finished = np.all([p.poll() is not None for p in processes])
-        time.sleep(5)
+    # processes = []
+    # for hyperparam in hyperparameters:
+    #     file_full = f"python main_pgd.py {hyperparam}"
+    #     print(file_full)
+    #     # os.system(file_full)
+    #     p = Popen(file_full, creationflags=CREATE_NEW_CONSOLE)
+    #     processes.append(p)
+    #
+    #
+    #
+    # finished = False
+    # while not finished:
+    #     finished = np.all([p.poll() is not None for p in processes])
+    #     time.sleep(5)
 
     print("WRITE RESULTS")
 

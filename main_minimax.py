@@ -189,6 +189,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--dataset', default="TRACE",help='Dataset Name (TRACE,divorce,Dialysis,Aids2,Framingham,rott2,dataDIVAT1,prostate,...)')
     parser.add_argument('--seed', type=int, default=123, help='Random seed for training Neural Netwrok')
+    parser.add_argument('--folder_name', type=str, default="results_minimax", help='Folder name to save experiments to')
 
     # training information
     parser.add_argument('--eps', type=float, default=0.5, help='The pertubation maximum during minimax training')
@@ -230,7 +231,7 @@ if __name__ == "__main__":
     print(f"Dataset Analyzed {args.dataset}")
     print(f"Objective Function {args.loss_wrapper}")
 
-    img_path = os.path.join("results",args.dataset)
+    img_path = os.path.join("results",args.folder_name,args.dataset)
     os.makedirs(img_path, exist_ok=True)
 
     args.img_path = img_path

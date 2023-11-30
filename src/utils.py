@@ -116,7 +116,7 @@ def pgd(model_loss, original_data, t, event, attack_magnitude, iters=1):
 #     return torch.arange(epochs), train_loss
 
 ###################
-def train_robust_step_pgd(model_loss, t, loader, eps_scheduler, norm, train, opt, pareto=[0.5,0.5],method='robust',device="cpu"):
+def train_robust_step_pgd(model_loss, t, loader, eps_scheduler, norm, train, opt, pareto=[0.5,0.5],method='robust',pgd_iter=1,device="cpu"):
     meter = MultiAverageMeter()
     if train:
         model_loss.train()
@@ -160,7 +160,7 @@ def train_robust_step_pgd(model_loss, t, loader, eps_scheduler, norm, train, opt
             #                                    bound_lower=False)
             # robust_loss = ub.sum()
             # loss = robust_loss
-            xi_ptb = pgd(model_loss, xi, ti, yi, eps, iters=1)
+            xi_ptb = pgd(model_loss, xi, ti, yi, eps, iters=pgd_iter)
 
             
             robust_loss = model_loss(xi_ptb , ti, yi).sum()
@@ -225,14 +225,14 @@ def train_robust_pgd(model,dataloader_train,dataloader_val,method,args):
         print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
         # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
-        train_epoch_loss = train_robust_step_pgd(model, t, dataloader_train, eps_scheduler, norm=args.norm, train=True, opt=optimizer,pareto=args.pareto,method=method,device=args.device)
+        train_epoch_loss = train_robust_step_pgd(model, t, dataloader_train, eps_scheduler, norm=args.norm, train=True, opt=optimizer,pareto=args.pareto,method=method,pgd_iter=args.pgd_iter,device=args.device)
         epoch_time = time.time() - start_time
         timer += epoch_time
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
             # how to clean up this...
-            val_epoch_loss = train_robust_step_pgd(model, t, dataloader_val, eps_scheduler, norm=args.norm, train=False, opt=None,pareto=args.pareto,method=method,device=args.device)
+            val_epoch_loss = train_robust_step_pgd(model, t, dataloader_val, eps_scheduler, norm=args.norm, train=False, opt=None,pareto=args.pareto,method=method,pgd_iter=args.pgd_iter,device=args.device)
 
             if len(window) < args.smooth_window:
                 window.append(val_epoch_loss)
