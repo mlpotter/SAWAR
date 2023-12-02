@@ -1,7 +1,7 @@
 from src.models import Exponential_Model
 from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
 from src.load_data import load_datasets,load_dataframe
-from src.utils import train_robust_pgd,lower_bound
+from src.utils import train_robust,lower_bound
 from src.visualizations import *
 from src.metrics import concordance,ibs,rhc_neg_logll
 
@@ -87,8 +87,8 @@ def main(args):
     model_fragile_wrap = BoundedModule(wrapper(clf_fragile,weight=args.weight,sigma=args.sigma),dataloader_train.dataset.tensors)
 
     # train models (robust and nonrobust)
-    _,loss_tr_robust,loss_val_robust = train_robust_pgd(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
-    epochs,loss_tr_fragile,loss_val_fragile = train_robust_pgd(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
+    _,loss_tr_robust,loss_val_robust = train_robust(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
+    epochs,loss_tr_fragile,loss_val_fragile = train_robust(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
 
     # get the train tensors (X,T,E)
     X_train, T_train, E_train = dataloader_train.dataset.tensors
@@ -189,7 +189,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--dataset', default="TRACE",help='Dataset Name (TRACE,divorce,Dialysis,Aids2,Framingham,rott2,dataDIVAT1,prostate,...)')
     parser.add_argument('--seed', type=int, default=123, help='Random seed for training Neural Netwrok')
-    parser.add_argument('--folder_name', type=str, default="results_pgd", help='Folder name to save experiments to')
+    parser.add_argument('--folder_name', type=str, default="results_minimax", help='Folder name to save experiments to')
+    parser.add_argument('--algorithm', type=str, default="crownibp", help='Algorithm for robust training. (crownibp,pgd,noise)')
 
     # training information
     parser.add_argument('--eps', type=float, default=0.5, help='The pertubation maximum during minimax training')
@@ -210,8 +211,8 @@ if __name__ == "__main__":
     parser.add_argument('--norm', type=float, default=np.inf, help='The norm to use for the epsilon ball')
     parser.add_argument('--pareto', type=str, default="0.1 0.9", help='The weighted combination between the normal objective and the autolirpa upper bound')
     parser.add_argument('--verify', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--pgd_iter',type=int,default=1,help="The number of steps in PGD attack")
     parser.add_argument('--cuda', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--pgd_iter',type=int,default=1,help="The number of steps in PGD attack")
 
     # neural network information
     parser.add_argument('--hidden_dims', type=str, default="50 50", help='The number of neurons in each hidden layers')
@@ -223,7 +224,7 @@ if __name__ == "__main__":
     args.hidden_dims = [int(h) for h in args.hidden_dims.split()]
     args.pareto = [float(p) for p in args.pareto.split()]
     args.weight = eval(args.weight)
-
+    args.norm = float(args.norm)
 
     device = "cuda:0" if (torch.cuda.is_available() and args.cuda) else "cpu"
 
@@ -231,6 +232,7 @@ if __name__ == "__main__":
 
     print(f"Dataset Analyzed {args.dataset}")
     print(f"Objective Function {args.loss_wrapper}")
+    print(f"Algorithm Selected {args.algorithm}")
 
     img_path = os.path.join("results",args.folder_name,args.dataset)
     os.makedirs(img_path, exist_ok=True)
