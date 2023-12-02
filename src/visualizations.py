@@ -92,9 +92,9 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     St_kmf = kmf.predict(times=t.ravel().numpy())
 
     attack_df = pd.DataFrame({"t":t.ravel(),
-                             "St_kmf":St_kmf,
-                             "St_baseline":St_fragile_x.mean(0),
-                             "St_robust": St_robust_x.mean(0)})
+                             "kmf_St":St_kmf,
+                             "baseline_St":St_fragile_x.mean(0),
+                             "robust_St": St_robust_x.mean(0)})
 
     fig,axes = plt.subplots(1,2,figsize=(20,10))
     axes[1].plot(t,St_kmf,linewidth=3)
@@ -122,7 +122,7 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
         lb,ub = lower_bound(clf_fragile,X,epsilon)
         St_lb = torch.exp(-ub*t).mean(0).detach()
 
-        attack_df["fragile_eps={:.2f}".format(epsilon)] = St_lb
+        attack_df["baseline_eps={:.2f}".format(epsilon)] = St_lb
         axes[0].plot(t,St_lb,'--')
 
     axes[0].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
@@ -138,7 +138,7 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
 
 
-        attack_df.to_excel(os.path.join(img_path,f"population_curves_attacked_{suptitle}.xlsx"))
+        attack_df.to_excel(os.path.join(img_path,f"population_curves_attacked_{suptitle}.xlsx"),index=False)
 
     plt.show()
 
@@ -226,15 +226,15 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
         plt.savefig(os.path.join(img_path,f"curve_distributions_{suptitle}.png"))
 
         q_df = pd.DataFrame({"t": t,
-                             "mean_baseline": q_fragile.mean(dim=0),
-                             "q95_baseline": q_fragile.quantile(0.95, dim=0),
-                             "q05_baseline": q_fragile.quantile(0.05, dim=0),
-                             "mean_robust": q_robust.mean(dim=0),
-                             "q95_robust": q_robust.quantile(0.95, dim=0),
-                             "q05_robust": q_robust.quantile(0.05, dim=0),
+                             "baseline_mean": q_fragile.mean(dim=0),
+                             "baseline_q95": q_fragile.quantile(0.95, dim=0),
+                             "baseline_q05": q_fragile.quantile(0.05, dim=0),
+                             "robust_mean": q_robust.mean(dim=0),
+                             "robust_q95": q_robust.quantile(0.95, dim=0),
+                             "robust_q05": q_robust.quantile(0.05, dim=0),
                              })
 
-        q_df.to_excel(os.path.join(img_path,f"curve_distributions_{suptitle}.xlsx"))
+        q_df.to_excel(os.path.join(img_path,f"curve_distributions_{suptitle}.xlsx"),index=False)
 
     plt.show()
 
