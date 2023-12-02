@@ -120,7 +120,7 @@ def main(args):
     plt.plot(t,St_robust_x.mean(0))
 
     plt.ylabel("S(t)"); plt.xlabel("Time")
-    plt.legend(["Kaplan Meier Numerical",f"Exponential Fit $\lambda$={np.round(1/clf_exp.params_[0],4)}","Neural Network Normal","Neural Network Robust"])
+    plt.legend(["Kaplan Meier Numerical",f"Exponential Fit $\lambda$={np.round(1/clf_exp.params_[0],4)}","Neural Network Baseline","Neural Network Robust"])
     plt.title("Train Population Survival Curves")
     plt.ylim([0,1.05])
     plt.tight_layout()

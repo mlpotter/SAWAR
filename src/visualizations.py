@@ -91,6 +91,10 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
     kmf.fit(durations=T,event_observed=E)
     St_kmf = kmf.predict(times=t.ravel().numpy())
 
+    attack_df = pd.DataFrame({"t":t.ravel(),
+                             "St_kmf":St_kmf,
+                             "St_baseline":St_fragile_x.mean(0),
+                             "St_robust": St_robust_x.mean(0)})
 
     fig,axes = plt.subplots(1,2,figsize=(20,10))
     axes[1].plot(t,St_kmf,linewidth=3)
@@ -99,12 +103,13 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
     for epsilon in epsilons:
         lb,ub = lower_bound(clf_robust,X,epsilon)
-        St_lb = torch.exp(-ub*t).mean(0)
+        St_lb = torch.exp(-ub*t).mean(0).detach()
 
-        axes[1].plot(t,St_lb.detach(),'--')
+        attack_df["robust_eps={:.2f}".format(epsilon)] = St_lb
+        axes[1].plot(t,St_lb,'--')
 
     axes[1].set_ylabel("S(t)"); axes[0].set_xlabel("Time")
-    axes[1].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
+    axes[1].legend(["Kaplan Meier Numerical","Neural Network Baseline","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
     axes[1].set_title(f"Robust Population Survival Curves")
     axes[1].set_ylim([0,1])
 
@@ -115,12 +120,14 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
     for epsilon in epsilons:
         lb,ub = lower_bound(clf_fragile,X,epsilon)
-        St_lb = torch.exp(-ub*t).mean(0)
-        axes[0].plot(t,St_lb.detach(),'--')
+        St_lb = torch.exp(-ub*t).mean(0).detach()
+
+        attack_df["fragile_eps={:.2f}".format(epsilon)] = St_lb
+        axes[0].plot(t,St_lb,'--')
 
     axes[0].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
-    axes[0].legend(["Kaplan Meier Numerical","Neural Network Nonrobust","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
-    axes[0].set_title("Nonrobust Population Survival Curves")
+    axes[0].legend(["Kaplan Meier Numerical","Neural Network Baseline","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
+    axes[0].set_title("Baseline Population Survival Curves")
     axes[0].set_ylim([0,1])
 
     plt.suptitle(suptitle)
@@ -128,6 +135,10 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
     if img_path != "":
         plt.savefig(os.path.join(img_path,f"population_curves_attacked_{suptitle}.png"))
+
+
+
+        attack_df.to_excel(os.path.join(img_path,f"population_curves_attacked_{suptitle}.xlsx"))
 
     plt.show()
 
@@ -143,15 +154,15 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
         lambda_robust = lambda_robust[lambda_robust < lambda_robust.quantile(0.98)]
         lambda_fragile = lambda_fragile[lambda_fragile < lambda_fragile.quantile(0.98)]
 
-    plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Fragile": lambda_fragile.ravel()})
+    plot_df = pd.DataFrame({"Lambda Robust": lambda_robust.ravel(), "Lambda Baseline": lambda_fragile.ravel()})
 
     sns.histplot(data=plot_df, x="Lambda Robust", ax=axes[1], stat="density", legend=False, color="blue")
     axes[1].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
     axes[1].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_robust.mean(),lambda_robust.var()))
 
     axes[0].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
-    axes[0].set_title("$\lambda$ Fragile")
-    sns.histplot(data=plot_df, x="Lambda Fragile", ax=axes[0], stat="density", legend=False, color="orange")
+    axes[0].set_title("$\lambda$ Baseline")
+    sns.histplot(data=plot_df, x="Lambda Baseline", ax=axes[0], stat="density", legend=False, color="orange")
     axes[0].set_title("$\mu$={:.4f} $\sigma^2$={:.4f}".format(lambda_fragile.mean(),lambda_fragile.var()))
 
     axes[2].set_xlim([lambda_fragile.min(), lambda_fragile.quantile(0.98)])
@@ -177,6 +188,7 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
 
     print(q_robust.shape)
 
+
     a = sns.lineplot(x=t, y=q_robust.mean(dim=0), label='Average S(t)', linewidth=3.0, ax=axes[1])
     b = sns.lineplot(x=t, y=q_robust.quantile(0.95,dim=0), label='Confidence', color='r', linewidth=3.0,
                      ax=axes[1])
@@ -199,7 +211,7 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
                      ax=axes[0])
 
     line = c.get_lines()
-    axes[0].set_title("NON ROBUST")
+    axes[0].set_title("Baseline")
     axes[0].fill_between(line[0].get_xdata(), line[1].get_ydata(), line[2].get_ydata(), color='blue', alpha=.3)
     axes[0].set_ylim([0, 1.05])
     axes[0].set_xlabel("time");
@@ -213,6 +225,17 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
     if img_path != "":
         plt.savefig(os.path.join(img_path,f"curve_distributions_{suptitle}.png"))
 
+        q_df = pd.DataFrame({"t": t,
+                             "mean_baseline": q_fragile.mean(dim=0),
+                             "q95_baseline": q_fragile.quantile(0.95, dim=0),
+                             "q05_baseline": q_fragile.quantile(0.05, dim=0),
+                             "mean_robust": q_robust.mean(dim=0),
+                             "q95_robust": q_robust.quantile(0.95, dim=0),
+                             "q05_robust": q_robust.quantile(0.05, dim=0),
+                             })
+
+        q_df.to_excel(os.path.join(img_path,f"curve_distributions_{suptitle}.xlsx"))
+
     plt.show()
 
 def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_robust,loss_val_robust,suptitle="",img_path=""):
@@ -221,7 +244,7 @@ def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_ro
 
     axes[0].plot(epochs,loss_tr_fragile)
     axes[0].plot(epochs,loss_val_fragile)
-    axes[0].set_title("Non Robust Learning Curve")
+    axes[0].set_title("Baseline Learning Curve")
     axes[0].legend(["Train","Validation"])
 
     axes[1].plot(epochs, loss_tr_robust)
