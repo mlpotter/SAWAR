@@ -225,7 +225,7 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
     if img_path != "":
         plt.savefig(os.path.join(img_path,f"curve_distributions_{suptitle}.png"))
 
-        q_df = pd.DataFrame({"t": t,
+        q_df = pd.DataFrame({"t": t.ravel(),
                              "baseline_mean": q_fragile.mean(dim=0),
                              "baseline_q95": q_fragile.quantile(0.95, dim=0),
                              "baseline_q05": q_fragile.quantile(0.05, dim=0),

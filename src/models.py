@@ -6,17 +6,29 @@ class Exponential_Model(nn.Module):
     def __init__(self,input_dim,hidden_layers=[10],output_dim=1):
         super().__init__()
         self.layers = [input_dim] + hidden_layers + [output_dim]
-        self.linears = nn.ModuleList([nn.Linear(self.layers[i],self.layers[i+1]) for i in range(len(self.layers)-1)])
-        self.num_layers = len(self.layers)
+        module_list = []
+        for i in range(len(self.layers)-2):
+            module_list.append(nn.Linear(self.layers[i],self.layers[i+1]))
+            module_list.append(nn.LeakyReLU())
+
+        module_list.append(nn.Linear(self.layers[i+1],self.layers[i+2]))
+
+        # self.linears = nn.ModuleList([nn.Linear(self.layers[i],self.layers[i+1]) for i in range(len(self.layers)-1)])
+        self.module_list = nn.ModuleList(module_list)
+
+        # self.num_layers = len(self.layers)
 
     def rate_logit(self,x):
-        for i,l in enumerate(self.linears):
+        # for i,l in enumerate(self.linears):
+        #     x = l(x)
+        #
+        #     if i == (self.num_layers-2):
+        #         break
+        #
+        #     x = F.leaky_relu(x)
+
+        for l in self.module_list:
             x = l(x)
-
-            if i == (self.num_layers-2):
-                break
-
-            x = F.leaky_relu(x)
 
         return x
 
@@ -136,9 +148,9 @@ def main():
     print(St.shape)
 
     model = Weibull_Model(input_dim=input_dim,hidden_layers=hidden_layers,output_dim=output_dim)
-    rate,k = model(x)
+    ratek = model(x)
 
-    print(rate,k)
+    print(rate)
 
 if __name__ == "__main__":
     main()
