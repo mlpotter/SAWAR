@@ -235,7 +235,7 @@ if __name__ == "__main__":
     print(f"Objective Function {args.loss_wrapper}")
     print(f"Algorithm Selected {args.algorithm}")
 
-    img_path = os.path.join("results",args.folder_name,args.dataset)
+    img_path = os.path.join("results",args.attack,args.folder_name,args.dataset)
     os.makedirs(img_path, exist_ok=True)
 
     args.img_path = img_path
