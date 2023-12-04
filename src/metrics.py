@@ -12,8 +12,12 @@ def concordance(clf, dataloader, epsilons,args=None):
     cis = np.zeros_like(epsilons)
     for i, epsilon in enumerate(epsilons):
         # lb, rate_attack = lower_bound(clf, X, epsilon)
+        # if epsilon == 0:
+        #     rate_attack = clf(X).detach()
+        #     ci = concordance_index(event_times=T, predicted_scores=-rate_attack, event_observed=E)
+        #
+        # else:
         rate_attack = attack(clf,X,T,E,epsilon,args)
-
         rate_attack = rate_attack.detach()
         try:
             rate_attack[rate_attack.isnan()] = (np.nanmax(rate_attack) + torch.tensor(np.random.randn(rate_attack.isnan().sum(), 1)).ravel()).type(

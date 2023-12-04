@@ -50,7 +50,7 @@ def main(args):
 
     # load the datasets
     dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True)
-    dataloader_val = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=False)
+    dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, shuffle=False)
     dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False)
 
     # set the dataloader mean and std ... not needed right now
