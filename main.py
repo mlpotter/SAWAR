@@ -1,7 +1,7 @@
 from src.models import Exponential_Model
 from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
 from src.load_data import load_datasets,load_dataframe
-from src.utils import train_robust,lower_bound
+from src.utils import train_robust,lower_bound,loss_wrapper
 from src.visualizations import *
 from src.metrics import concordance,ibs,rhc_neg_logll
 
@@ -68,15 +68,15 @@ def main(args):
 
 
     epsilons = [2.0,1, .8, 0.7, .6, 0.5, 0.1, 0.07, 0.05, 0]
-    eps_random, ci_random= concordance(clf_robust, dataloader_train, epsilons)
+    eps_random, ci_random= concordance(clf_robust, dataloader_train, epsilons,args)
     df_ci_random = pd.DataFrame({"RANDOM CI":ci_random},index=eps_random)
     print("Train Concordance Index RANDOM \n",df_ci_random)
 
-    eps_robust, ibs_random = ibs(clf_robust, dataloader_train, dataloader_test,epsilons)
+    eps_robust, ibs_random = ibs(clf_robust, dataloader_train, dataloader_test,epsilons,args)
     df_ibs_random = pd.DataFrame({"RANDOM IBS":ibs_random},index=eps_robust)
     print("Test Integrated Brier Score RANDOM \n",df_ibs_random)
 
-    eps_robust, neg_ll_random = rhc_neg_logll(clf_robust, dataloader_train,epsilons)
+    eps_robust, neg_ll_random = rhc_neg_logll(clf_robust, dataloader_train,epsilons,args)
     df_negll_random = pd.DataFrame({"RANDOM Neg LL":neg_ll_random},index=eps_robust)
     print("Train Neg LL RANDOM \n",df_negll_random)
 
@@ -143,26 +143,26 @@ def main(args):
     # ======================= Benchmarks ========================== #
 
     epsilons = [2.0,1, .8, 0.7, .6, 0.5, 0.1, 0.07, 0.05, 0]
-    eps_robust, ci_robust = concordance(clf_robust, dataloader_train, epsilons)
-    _, ci_fragile = concordance(clf_fragile, dataloader_train, epsilons)
+    eps_robust, ci_robust = concordance(clf_robust, dataloader_train, epsilons,args)
+    _, ci_fragile = concordance(clf_fragile, dataloader_train, epsilons,args)
     df_ci_train = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
     print("Train Concordance Index \n",df_ci_train)
 
-    eps_robust, ci_robust = concordance(clf_robust, dataloader_test, epsilons)
-    _, ci_fragile = concordance(clf_fragile, dataloader_test, epsilons)
+    eps_robust, ci_robust = concordance(clf_robust, dataloader_test, epsilons,args)
+    _, ci_fragile = concordance(clf_fragile, dataloader_test, epsilons,args)
     df_ci_test = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
     df_ci_test.to_excel(os.path.join(args.img_path,"CI.xlsx"),index_label="eps")
     print("Test Concordance Index \n",df_ci_test)
 
 
-    eps_robust, ibs_robust = ibs(clf_robust, dataloader_train, dataloader_test,epsilons)
-    _, ibs_fragile = ibs(clf_fragile, dataloader_train,dataloader_test, epsilons)
+    eps_robust, ibs_robust = ibs(clf_robust, dataloader_train, dataloader_test,epsilons,args)
+    _, ibs_fragile = ibs(clf_fragile, dataloader_train,dataloader_test, epsilons,args)
     df_ibs_test = pd.DataFrame({"Robust IBS":ibs_robust,"Non Robust IBS":ibs_fragile},index=eps_robust)
     df_ibs_test.to_excel(os.path.join(args.img_path,"IBS.xlsx"),index_label="eps")
     print("Test Integrated Brier Score \n",df_ibs_test)
 
-    eps_robust, neg_ll_robust = rhc_neg_logll(clf_robust, dataloader_test,epsilons)
-    _, neg_ll_fragile = rhc_neg_logll(clf_fragile, dataloader_test, epsilons)
+    eps_robust, neg_ll_robust = rhc_neg_logll(clf_robust, dataloader_test,epsilons,args)
+    _, neg_ll_fragile = rhc_neg_logll(clf_fragile, dataloader_test, epsilons,args)
     df_neg_ll_test = pd.DataFrame({"Robust NegLL":neg_ll_robust,"Non Robust NegLL":neg_ll_fragile},index=eps_robust)
     df_neg_ll_test.to_excel(os.path.join(args.img_path,"NegLL.xlsx"),index_label="eps")
     print("Test NLL \n",df_neg_ll_test)
@@ -191,6 +191,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=123, help='Random seed for training Neural Netwrok')
     parser.add_argument('--folder_name', type=str, default="results_minimax", help='Folder name to save experiments to')
     parser.add_argument('--algorithm', type=str, default="crownibp", help='Algorithm for robust training. (crownibp,pgd,noise)')
+    parser.add_argument('--attack',type=str,default="fgsm",help="The attack method during evaluation (fgsm,crownibp)")
 
     # training information
     parser.add_argument('--eps', type=float, default=0.5, help='The pertubation maximum during minimax training')

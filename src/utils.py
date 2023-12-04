@@ -13,15 +13,25 @@ from torch import optim
 from math import sqrt
 
 from src.criterion import RightCensorWrapper,right_censored,ranking_loss
+from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
 
 from csv import writer
 from csv import reader
+def loss_wrapper(loss_wrapper):
+    if loss_wrapper == "rank":
+        return RankingWrapper
+    elif loss_wrapper == "rhc":
+        return RightCensorWrapper
+    elif loss_wrapper == "rhc_rank":
+        return RHC_Ranking_Wrapper
+    else:
+        raise Exception("not valid wrapper choice")
 
 @torch.enable_grad()
 def pgd(model_loss, original_data, t, event, attack_magnitude, iters=1):
     #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    perturbed_data = original_data
+    perturbed_data = torch.clone(original_data)
     #loss = model_loss
     original_images = perturbed_data.data
     
@@ -337,3 +347,16 @@ def lower_bound(clf, nominal_input, epsilon):
     lb, ub = model.compute_bounds(x=(my_input,), method="backward")
 
     return lb, ub
+
+def attack(clf,x,t,e,eps,args):
+    if args.attack=="crownibp":
+        _,rate_attack = lower_bound(clf,x,eps)
+
+    elif args.attack=="fgsm":
+        with torch.no_grad():
+            model_loss = loss_wrapper(args.loss_wrapper)(clf)
+            x_ptb = pgd(model_loss, x, t, e, eps, iters=1)
+            rate_attack = clf(x_ptb)
+
+        clf.zero_grad()
+    return rate_attack
