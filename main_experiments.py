@@ -17,7 +17,7 @@ import time
 
 if __name__ == "__main__":
     algorithms = ["pgd","fgsm","noise","crownibp"]
-    attack = "crownibp"
+    attack = "fgsm"
     for algo in algorithms:
         print(f"Algorithm {algo}")
 
@@ -27,13 +27,13 @@ if __name__ == "__main__":
 
 
         hyperparameters = [
-            f'--dataset=TRACE --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=divorce  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=Dialysis  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name}  --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=Aids2  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=Framingham  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=dataDIVAT1  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
-            f'--dataset=prostate  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=300 --no-cuda --batch_size=16 --weight=1/16 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=10" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=TRACE --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=divorce  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=Dialysis  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name}  --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=Aids2  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=Framingham  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=dataDIVAT1  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
+            f'--dataset=prostate  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=16 --weight=1/16 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
         ]
 
         results_folder = os.path.join("results", attack, folder_name)

@@ -17,15 +17,19 @@ def concordance(clf, dataloader, epsilons,args=None):
         #     ci = concordance_index(event_times=T, predicted_scores=-rate_attack, event_observed=E)
         #
         # else:
-        rate_attack = attack(clf,X,T,E,epsilon,args)
-        rate_attack = rate_attack.detach()
-        try:
-            rate_attack[rate_attack.isnan()] = (np.nanmax(rate_attack) + torch.tensor(np.random.randn(rate_attack.isnan().sum(), 1)).ravel()).type(
-                torch.float)
+        if epsilon == 0.0:
+            rate_attack = clf(X).detach()
             ci = concordance_index(event_times=T, predicted_scores=-rate_attack, event_observed=E)
+        else:
+            rate_attack = attack(clf,X,T,E,epsilon,args)
+            rate_attack = rate_attack.detach()
+            try:
+                rate_attack[rate_attack.isnan()] = (np.nanmax(rate_attack) + torch.tensor(np.random.randn(rate_attack.isnan().sum(), 1)).ravel()).type(
+                    torch.float)
+                ci = concordance_index(event_times=T, predicted_scores=-rate_attack, event_observed=E)
 
-        except:
-            ci = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
+            except:
+                ci = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
 
         # print("CI @ eps={}".format(epsilon), ci)
 
@@ -40,16 +44,20 @@ def rhc_neg_logll(clf, dataloader, epsilons,args=None):
     neg_loglls = np.zeros_like(epsilons)
     for i, epsilon in enumerate(epsilons):
         # lb, ub = lower_bound(clf, X, epsilon)
-        rate_attack = attack(clf,X,T,E,epsilon,args)
-
-        rate_attack = rate_attack.detach()
-        try:
+        if epsilon == 0.0:
+            rate_attack = clf(X).detach()
             neg_ll = right_censored(rate_attack,T,E)
 
-        except:
-            neg_ll = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
+        else:
+            rate_attack = attack(clf,X,T,E,epsilon,args)
+            rate_attack = rate_attack.detach()
+            try:
+                neg_ll = right_censored(rate_attack,T,E)
 
-        # print("CI @ eps={}".format(epsilon), ci)
+            except:
+                neg_ll = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
+
+            # print("CI @ eps={}".format(epsilon), ci)
 
         neg_loglls[i] = neg_ll
 
@@ -76,22 +84,31 @@ def ibs(clf, dataloader_train,dataloader_test, epsilons,args=None):
 
     for i, epsilon in enumerate(epsilons):
         # lb, ub = lower_bound(clf, X_te, epsilon)
-        rate_attack = attack(clf,X_te,T_te,E_te,epsilon,args)
+        if epsilon == 0.0:
 
-        rate_attack = rate_attack.detach()
+            rate_attack = clf(X_te).detach()
 
-        St = torch.exp( -(rate_attack*t)).detach()
-
-        try:
-            rate_attack[rate_attack.isnan()] = (np.nanmax(rate_attack) + torch.tensor(np.random.randn(rate_attack.isnan().sum(), 1)).ravel()).type(
-                torch.float)
-
+            St = torch.exp(-(rate_attack * t)).detach()
 
             ibs_eps  = integrated_brier_score(y_tr, y_te, St, t.ravel())
 
-        except:
+        else:
+            rate_attack = attack(clf,X_te,T_te,E_te,epsilon,args)
 
-            ibs_eps = np.nan
+            rate_attack = rate_attack.detach()
+
+            St = torch.exp( -(rate_attack*t)).detach()
+
+            try:
+                rate_attack[rate_attack.isnan()] = (np.nanmax(rate_attack) + torch.tensor(np.random.randn(rate_attack.isnan().sum(), 1)).ravel()).type(
+                    torch.float)
+
+
+                ibs_eps  = integrated_brier_score(y_tr, y_te, St, t.ravel())
+
+            except:
+
+                ibs_eps = np.nan
 
         ibs_[i] = ibs_eps
 

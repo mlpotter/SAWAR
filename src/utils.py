@@ -242,7 +242,7 @@ def train_robust_step_crownibp(model_loss, t, loader, eps_scheduler, train, opt,
             eps_scheduler.update_loss(loss.item() - regular_loss.item())
             opt.step()
 
-        epoch_loss += combined_loss.detach().item()
+        epoch_loss += regular_loss.detach().item()
 
         meter.update('Loss', loss.item(), xi.size(0))
         if batch_method != "natural":
@@ -287,6 +287,9 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
     loss_train = np.zeros((args.num_epochs,))
     loss_val = np.zeros((args.num_epochs,))
 
+    N_train = len(dataloader_train.dataset)
+    N_val = len(dataloader_val.dataset)
+
     for t in range(1, args.num_epochs+1):
         if eps_scheduler.reached_max_eps():
             # Only decay learning rate after reaching the maximum eps
@@ -294,14 +297,14 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
         print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
         # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
-        train_epoch_loss = train_robust_step(model, t, dataloader_train, eps_scheduler, train=True, opt=optimizer,pareto=args.pareto,method=method,args=args)
+        train_epoch_loss = train_robust_step(model, t, dataloader_train, eps_scheduler, train=True, opt=optimizer,pareto=args.pareto,method=method,args=args)/N_train
         epoch_time = time.time() - start_time
         timer += epoch_time
         print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
         print("Evaluating...")
         with torch.no_grad():
             # how to clean up this...
-            val_epoch_loss = train_robust_step(model, t, dataloader_val, eps_scheduler,train=False, opt=None,pareto=args.pareto,method=method,args=args)
+            val_epoch_loss = train_robust_step(model, t, dataloader_val, eps_scheduler,train=False, opt=None,pareto=args.pareto,method=method,args=args)/N_val
 
             if len(window) < args.smooth_window:
                 window.append(val_epoch_loss)
