@@ -35,7 +35,7 @@ def pgd(model_loss, original_data, t, event, attack_magnitude, iters=1):
     #loss = model_loss
     original_images = perturbed_data.data
     
-    alpha = attack_magnitude
+    alpha = attack_magnitude/iters
     
     for i in range(iters) : 
         model_loss.zero_grad()

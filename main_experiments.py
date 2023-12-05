@@ -7,8 +7,12 @@ import subprocess
 import os
 import glob
 
+OS = os.name
 
-from subprocess import CREATE_NEW_CONSOLE,Popen
+from subprocess import Popen
+
+if OS == "nt":
+    from subprocess import CREATE_NEW_CONSOLE
 
 import pandas as pd
 import time
@@ -41,10 +45,18 @@ if __name__ == "__main__":
         processes = []
 
         for hyperparam in hyperparameters:
-            file_full = f"python main.py {hyperparam}"
-            print(file_full)
-            # os.system(file_full)
-            p = Popen(file_full, creationflags=CREATE_NEW_CONSOLE)
+            if OS == "nt":
+                file_full = f"python main.py {hyperparam}"
+                print(file_full)
+                # os.system(file_full)
+                p = Popen(file_full, creationflags=CREATE_NEW_CONSOLE)
+
+            else:
+                file_full = f"tmux new-session -d python3 main.py {hyperparam}"
+                print(file_full)
+                # os.system(file_full)
+                p = Popen(file_full, shell=True)
+
             processes.append(p)
 
 
