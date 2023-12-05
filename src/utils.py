@@ -91,7 +91,9 @@ def train_robust_step_noise(model_loss, t, loader, eps_scheduler, train, opt, pa
 
         if batch_method == "robust":
 
-            xi_ptb = xi + (sqrt(eps)*torch.eye(xi.shape[0])) @ torch.randn_like(xi)
+            ptb = torch.clip((sqrt(eps)*torch.eye(xi.shape[0])) @ torch.randn_like(xi), min=-eps, max=eps)
+
+            xi_ptb = xi + ptb #(sqrt(eps)*torch.eye(xi.shape[0])) @ torch.randn_like(xi)
 
             robust_loss = model_loss(xi_ptb, ti, yi).sum()
             loss = robust_loss
