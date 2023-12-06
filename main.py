@@ -57,10 +57,6 @@ def main(args):
     dataloader_train.mean = dataloader_val.mean = dataloader_test.mean = dataset_train.mean
     dataloader_train.std = dataloader_val.mean = dataloader_test.std = dataset_train.std
 
-    print(f"The train dataset shape {dataset_train.tensors[0].shape}")
-    print(f"The val dataset shape {dataset_val.tensors[0].shape}")
-    print(f"The test dataset shape {dataset_test.tensors[0].shape}")
-
     # initialize the Neural Network models (exponential models)
     clf_robust = Exponential_Model(input_dim=input_dims,hidden_layers=args.hidden_dims)
     clf_fragile = Exponential_Model(input_dim=input_dims,hidden_layers=args.hidden_dims)

@@ -23,7 +23,7 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # If event=1, time is the time of event, if event=0, time is the right censor time
     time = data_df.pop("time").values.reshape(-1,1)+1e-5
 
-    if ds_name in ["Aids2","Framingham","dataDIVAT1"]:
+    if ds_name in ["Aids2","Framingham","dataDIVAT1","flchain"]:
         time = time/365
     elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate"]:
         time = time/12
@@ -63,6 +63,11 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     if normalize:
         dataset_train.mean = dataset_val.mean =  dataset_test.mean = torch.Tensor(std.mean_).reshape(1,-1)
         dataset_train.std = dataset_val.std = dataset_test.std = torch.Tensor(std.scale_).reshape(1,-1)
+
+    print(f"The train dataset shape {dataset_train.tensors[0].shape}")
+    print(f"The val dataset shape {dataset_val.tensors[0].shape}")
+    print(f"The test dataset shape {dataset_test.tensors[0].shape}")
+    print("Min Time {:.4f} - Max Time {:.4f}".format(time.min(),time.max()))
 
     return dataset_train,dataset_val,dataset_test
 

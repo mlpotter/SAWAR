@@ -80,7 +80,7 @@ def ibs(clf, dataloader_train,dataloader_test, epsilons,args=None):
 
     ibs_ = np.zeros_like(epsilons)
 
-    t = torch.linspace(T_te.min()+1e-4,T_te.max()-1e-4,1000).view(1,-1)
+    t = torch.linspace(T_te.min()+1e-2,T_te.max()-1e-2,1000).view(1,-1)
 
     for i, epsilon in enumerate(epsilons):
         # lb, ub = lower_bound(clf, X_te, epsilon)
