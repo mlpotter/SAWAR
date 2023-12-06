@@ -92,6 +92,8 @@ def main(args):
 
     # get the train tensors (X,T,E)
     X_train, T_train, E_train = dataloader_train.dataset.tensors
+    X_test, T_test, E_test = dataloader_test.dataset.tensors
+
     t = torch.linspace(0, T_train.max(), 1000)
 
     # ================= Fit other models ============================== #
@@ -128,12 +130,28 @@ def main(args):
         plt.savefig(os.path.join(args.img_path,f"survival_curves.png"))
     plt.show()
 
-    # ================ WeibullAFTFitter =================== #
+    # ================ KM ONLY =================== #
+    kmf = KaplanMeierFitter(alpha=0.1)
+    kmf.fit(durations=T_test,event_observed=E_test)
     kmf.plot()
-    clf_aft.predict_survival_function(df_train).mean(1).plot(label="Weibull AFT",figsize=(10,10))
     plt.legend()
     plt.ylim([0,1.05])
     plt.tight_layout()
+    if img_path != "":
+        plt.savefig(os.path.join(args.img_path,f"KM_curves.png"))
+    plt.show()
+
+    # ================ WeibullAFTFitter =================== #
+    kmf.plot()
+    clf_aft.predict_survival_function(df_test).mean(1).plot(c='b',label="Weibull AFT",figsize=(10,10))
+    clf_aft.predict_survival_function(df_test).quantile(0.95,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
+    clf_aft.predict_survival_function(df_test).quantile(0.05,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
+
+    plt.legend()
+    plt.ylim([0,1.05])
+    plt.tight_layout()
+    if img_path != "":
+        plt.savefig(os.path.join(args.img_path,f"Weibull_AFT_curves.png"))
     plt.show()
     print("Weibull AFT\n",clf_aft.params_)
 

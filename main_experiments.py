@@ -21,7 +21,7 @@ import time
 
 if __name__ == "__main__":
     algorithms = ["pgd","fgsm","noise","crownibp"]
-    attack = "crownibp"
+    attack = "fgsm"
     for algo in algorithms:
         print(f"Algorithm {algo}")
 
