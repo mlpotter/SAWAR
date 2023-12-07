@@ -61,9 +61,11 @@ if __name__ == "__main__":
         results_folder = os.path.join("results", attack, folder_name)
 
         processes = []
-        for batch_job in range(len(hyperparameters)//batch_job_size + 1):
 
-            for hyperparam in hyperparameters[(batch_job*batch_job_size):(batch_job+1)*batch_job_size]:
+        for hyperparam in hyperparameters:
+
+            if ( np.sum([p.poll() is None for p in processes]) < batch_job_size ) or ( len(processes) < batch_job_size ):
+
                 if OS == "nt":
                     file_full = f"python main.py {hyperparam}"
                     print(file_full)
@@ -78,11 +80,33 @@ if __name__ == "__main__":
 
                 processes.append(p)
 
-
-            finished = False
-            while not finished:
-                finished = np.all([p.poll() is not None for p in processes])
-                time.sleep(5)
+        finished = False
+        while not finished:
+            finished = np.all([p.poll() is not None for p in processes])
+            time.sleep(5)
+        #
+        # for batch_job in range(len(hyperparameters)//batch_job_size + 1):
+        #
+        #     for hyperparam in hyperparameters[(batch_job*batch_job_size):(batch_job+1)*batch_job_size]:
+        #         if OS == "nt":
+        #             file_full = f"python main.py {hyperparam}"
+        #             print(file_full)
+        #             # os.system(file_full)
+        #             p = Popen(file_full, creationflags=CREATE_NEW_CONSOLE)
+        #
+        #         else:
+        #             file_full = f"tmux new-session -d python3 main.py {hyperparam}"
+        #             print(file_full)
+        #             # os.system(file_full)
+        #             p = Popen(file_full, shell=True)
+        #
+        #         processes.append(p)
+        #
+        #
+        #     finished = False
+        #     while not finished:
+        #         finished = np.all([p.poll() is not None for p in processes])
+        #         time.sleep(5)
 
         print(f"WRITE RESULTS FOR {algo}")
 
