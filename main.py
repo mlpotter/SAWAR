@@ -1,5 +1,5 @@
 from src.models import Exponential_Model
-from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
+from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper,right_censored,ranking_loss
 from src.load_data import load_datasets,load_dataframe
 from src.utils import train_robust,lower_bound,loss_wrapper
 from src.visualizations import *
@@ -76,6 +76,18 @@ def main(args):
     df_negll_random = pd.DataFrame({"RANDOM Neg LL":neg_ll_random},index=eps_robust)
     print("Train Neg LL RANDOM \n",df_negll_random)
 
+    # get the train tensors (X,T,E)
+    X_train, T_train, E_train = dataloader_train.dataset.tensors
+    X_test, T_test, E_test = dataloader_test.dataset.tensors
+
+    with torch.no_grad():
+        rate = clf_robust(X_test)
+        loss_base_rank = ranking_loss(clf_robust,X_test,T_test,E_test)
+        loss_base_rhc = right_censored(rate,T_test,E_test)
+
+        print("Test Rank RANDOM: ",loss_base_rank)
+        print("Test NegLL RANDOM: ",loss_base_rhc)
+
 
     # initialize the model objective wrappers and make BoundedModule
     wrapper = loss_wrapper(args.loss_wrapper)
@@ -86,9 +98,13 @@ def main(args):
     _,loss_tr_robust,loss_val_robust = train_robust(model_robust_wrap, dataloader_train, dataloader_val, method="robust", args=args)
     epochs,loss_tr_fragile,loss_val_fragile = train_robust(model_fragile_wrap, dataloader_train,dataloader_val, method="natural", args=args)
 
-    # get the train tensors (X,T,E)
-    X_train, T_train, E_train = dataloader_train.dataset.tensors
-    X_test, T_test, E_test = dataloader_test.dataset.tensors
+    with torch.no_grad():
+        rate = clf_robust(X_test)
+        loss_base_rank = ranking_loss(clf_robust,X_test,T_test,E_test)
+        loss_base_rhc = right_censored(rate,T_test,E_test)
+
+        print("Test Rank: ",loss_base_rank)
+        print("Test NegLL: ",loss_base_rhc)
 
     t = torch.linspace(0, T_train.max(), 1000)
 

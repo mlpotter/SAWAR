@@ -87,7 +87,7 @@ def train_robust_step_noise(model_loss, t, loader, eps_scheduler, train, opt, pa
             opt.zero_grad()
 
         regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
-        meter.update('Loss', regular_loss.item(), xi.size(0))
+        meter.update('Baseline Loss', regular_loss.item(), xi.size(0))
 
         if batch_method == "robust":
 
@@ -108,9 +108,10 @@ def train_robust_step_noise(model_loss, t, loader, eps_scheduler, train, opt, pa
             eps_scheduler.update_loss(loss.item() - regular_loss.item())
             opt.step()
 
-        epoch_loss += combined_loss.detach().item()
+        # epoch_loss += combined_loss.detach().item()
+        epoch_loss += regular_loss.detach().item()
 
-        meter.update('Loss', loss.item(), xi.size(0))
+        meter.update('Baseline + Robust Loss', loss.item(), xi.size(0))
         if batch_method != "natural":
             meter.update('Robust_Loss', robust_loss.item(), xi.size(0))
 
@@ -170,7 +171,8 @@ def train_robust_step_pgd(model_loss, t, loader, eps_scheduler, train, opt, pare
             eps_scheduler.update_loss(loss.item() - regular_loss.item())
             opt.step()
 
-        epoch_loss += combined_loss.detach().item()
+        # epoch_loss += combined_loss.detach().item()
+        epoch_loss += regular_loss.detach().item()
 
         meter.update('Loss', loss.item(), xi.size(0))
         if batch_method != "natural":

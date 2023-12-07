@@ -23,9 +23,9 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     # If event=1, time is the time of event, if event=0, time is the right censor time
     time = data_df.pop("time").values.reshape(-1,1)+1e-5
 
-    if ds_name in ["Aids2","Framingham","dataDIVAT1","flchain"]:
+    if ds_name in ["Aids2","Framingham","dataDIVAT1","flchain","Pbc3","vlbw","zinc","LeukSurv"]:
         time = time/365
-    elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate"]:
+    elif ds_name == ["rott2", "divorce","gse4335","nki70","prostate","prostateSurvival","retinopathy","stagec"]:
         time = time/12
 
     # one hot encode all the "fac" categorical variables
@@ -78,9 +78,9 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     data_df.dropna(axis=0, inplace=True)
     data_df.time = data_df.time + 1e-5
 
-    if ds_name in ["Aids2","Framingham","dataDIVAT1"]:
+    if ds_name in ["Aids2","Framingham","dataDIVAT1","flchain","Pbc3","vlbw","zinc","LeukSurv"]:
         data_df.time = data_df.time/365
-    elif ds_name == ["rott2", "divorce", "gse4335", "nki70", "prostate"]:
+    elif ds_name == ["rott2", "divorce", "gse4335", "nki70", "prostate","prostateSurvival","retinopathy","stagec"]:
         data_df.time = data_df.time/12
 
     # one hot encode all the "fac" categorical variables

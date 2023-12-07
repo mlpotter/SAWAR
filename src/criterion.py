@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import math
 
 
 def interval_censored(rate,t_start,t_end,event):
@@ -11,33 +12,49 @@ def right_censored(rate,t,event):
 
     return (-event*log_exact - (1-event)*log_right).sum()
 
-def ranking_loss():
+# def ranking_loss(rate,t,e):
+#     # column vector
+#     constant = math.log(2)
+#     R = torch.transpose(rate, 0, 1) - rate
+#
+#     T = torch.relu(torch.sign(t.transpose(1, 0) - t))
+#     # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
+#
+#     A = T * e
+#     #  only remains T_{ij}=1 when event occured for subject i
+#
+#     # total pairs
+#     N = torch.sum(A, axis=[], keepdims=True)
+#
+#     #
+#     pairwise_ranking_loss = A * torch.log(torch.sigmoid(R)) / constant + A * torch.ones_like(rate)
+#
+#     # pairwise_ranking_loss.mean(axis=1, keepdim=True)
+#     ci_lb = 1 / N * torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
+#
+#     return ci_lb.sum()
+def ranking_loss(model,x,t,e,sigma=1):
+    R = model.failure_cdf(x, t)
+    # R{ij} = r_{i}{T_{j}} risk of the ith patient based on jth time condition
+    # R{ij}' = r_{j}{T_{i}} risk of the jth patient based on the ith time condition
 
-    # see ranking wrapper...
+    Rii = 1.0 - torch.exp(-model(x) * t)
+    # R{i} = R_{i}(T_{i})
 
-    # I_2 = tf.cast(tf.equal(self.k, e + 1), dtype=tf.float32)  # indicator for event
-    # I_2 = tf.diag(tf.squeeze(I_2))
-    # tmp_e = tf.reshape(tf.slice(self.out, [0, e, 0], [-1, 1, -1]),
-    #                    [-1, self.num_Category])  # event specific joint prob.
-    #
-    # R = tf.matmul(tmp_e, tf.transpose(self.fc_mask2))  # no need to divide by each individual dominator
-    # # r_{ij} = risk of i-th pat based on j-th time-condition (last meas. time ~ event time) , i.e. r_i(T_{j})
-    #
-    # diag_R = tf.reshape(tf.diag_part(R), [-1, 1])
-    # R = tf.matmul(one_vector, tf.transpose(diag_R)) - R  # R_{ij} = r_{j}(T_{j}) - r_{i}(T_{j})
-    # R = tf.transpose(R)  # Now, R_{ij} (i-th row j-th column) = r_{i}(T_{i}) - r_{j}(T_{i})
-    #
-    # T = tf.nn.relu(tf.sign(tf.matmul(one_vector, tf.transpose(self.t)) - tf.matmul(self.t, tf.transpose(one_vector))))
-    # # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
-    #
-    # T = tf.matmul(I_2, T)  # only remains T_{ij}=1 when event occured for subject i
-    #
-    # tmp_eta = tf.reduce_mean(T * tf.exp(-R / sigma1), reduction_indices=1, keep_dims=True)
-    #
-    # eta.append(tmp_eta)
+    G = Rii - R.transpose(1, 0)
+    # G_{ij} = r_{i}(T_{i}) - r_{j}(T_{i})
 
+    T = torch.relu(torch.sign(t.transpose(1, 0) - t))
+    # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
 
-    pass
+    A = T * e
+    #  only remains T_{ij}=1 when event occured for subject i
+
+    #
+    pairwise_ranking_loss = A * torch.exp(-G / sigma)
+
+    # pairwise_ranking_loss.mean(axis=1, keepdim=True)
+    return torch.sum(pairwise_ranking_loss, axis=1, keepdims=True).sum()
 
 class RightCensorWrapper(nn.Module):
     def __init__(self,model,**kwargs):
@@ -83,6 +100,35 @@ class RankingWrapper(nn.Module):
         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
         return self.weight*torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
 
+# class RankingWrapper(nn.Module):
+#     def __init__(self, model,**kwargs):
+#         super(RankingWrapper, self).__init__()
+#         self.model = model
+#         self.constant = math.log(2)
+#
+#     def forward(self, x, t, e):
+#         # column vector
+#         mu = self.model(x)
+#
+#         R = torch.transpose(mu,0,1) - mu
+#
+#         T = torch.relu(torch.sign(t.transpose(1, 0) - t))
+#         # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
+#
+#         A = T * e
+#         #  only remains T_{ij}=1 when event occured for subject i
+#
+#         # total pairs
+#         N = torch.sum(A,axis=[],keepdims=True)
+#
+#         #
+#         pairwise_ranking_loss = A * torch.log(torch.sigmoid(R))/self.constant + A * torch.ones_like(mu)
+#
+#         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
+#         ci_lb = 1/N * torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
+#
+#         return ci_lb
+
 class RHC_Ranking_Wrapper(nn.Module):
     def __init__(self, model,weight=1.0,sigma=1.0,**kwargs):
         super(RHC_Ranking_Wrapper, self).__init__()
@@ -122,6 +168,45 @@ class RHC_Ranking_Wrapper(nn.Module):
         log_right = (1 - e) * -(rate * t)
 
         return -log_exact + -log_right
+
+# class RHC_Ranking_Wrapper(nn.Module):
+#     def __init__(self, model,weight=1.0,**kwargs):
+#         super(RHC_Ranking_Wrapper, self).__init__()
+#         self.model = model
+#         self.weight = weight
+#         self.constant = math.log(2)
+#
+#     def forward(self,x,t,e):
+#         return self.weight*self.Rank(x,t,e) + self.RHC(x,t,e)
+#
+#     def Rank(self,x,t,e):
+#         mu = self.model(x)
+#
+#         R = torch.transpose(mu,0,1) - mu
+#
+#         T = torch.relu(torch.sign(t.transpose(1, 0) - t))
+#         # T_{ij}=1 if t_i < t_j  and T_{ij}=0 if t_i >= t_j
+#
+#         A = T * e
+#         #  only remains T_{ij}=1 when event occured for subject i
+#
+#         # total pairs
+#         N = torch.sum(A,axis=[],keepdims=True)
+#
+#         #
+#         pairwise_ranking_loss = A * torch.log(torch.sigmoid(R))/self.constant + A * torch.ones_like(mu)
+#
+#         # pairwise_ranking_loss.mean(axis=1, keepdim=True)
+#         ci_lb = 1/N * torch.sum(pairwise_ranking_loss, axis=1, keepdims=True)
+#
+#         return ci_lb
+#     def RHC(self,x,t,e):
+#         rate = self.model(x)
+#
+#         log_exact = e * torch.log(rate) + e * -(t * rate)
+#         log_right = (1 - e) * -(rate * t)
+#
+#         return -log_exact + -log_right
 
 def main():
     from src.models import Exponential_Model
