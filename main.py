@@ -63,7 +63,7 @@ def main(args):
     clf_fragile.load_state_dict(deepcopy(clf_robust.state_dict()))
 
 
-    epsilons = [2.0,1, .8, 0.7, .6, 0.5, 0.1, 0.07, 0.05, 0]
+    epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
     eps_random, ci_random= concordance(clf_robust, dataloader_train, epsilons,args)
     df_ci_random = pd.DataFrame({"RANDOM CI":ci_random},index=eps_random)
     print("Train Concordance Index RANDOM \n",df_ci_random)
@@ -130,7 +130,6 @@ def main(args):
     plt.plot(t,St_kmf)
     plt.plot(t,St_exp)
     plt.plot(t,St_fragile_x.mean(0))
-
     plt.plot(t,St_robust_x.mean(0))
 
     plt.ylabel("S(t)"); plt.xlabel("Time")
@@ -172,7 +171,7 @@ def main(args):
 
     # ======================= Benchmarks ========================== #
 
-    epsilons = [2.0,1, .8, 0.7, .6, 0.5, 0.1, 0.07, 0.05, 0]
+    epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
     eps_robust, ci_robust = concordance(clf_robust, dataloader_train, epsilons,args)
     _, ci_fragile = concordance(clf_fragile, dataloader_train, epsilons,args)
     df_ci_train = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
@@ -209,7 +208,7 @@ def main(args):
     visualize_curve_distributions(clf_fragile,clf_robust,dataloader_test,suptitle="test",img_path=args.img_path)
 
     # visualize the attacks on the curves
-    epsilons = [2.0,1.0, 0.8, 0.7, 0.6, 0.5, 0.1, 0.07, 0.05]
+    epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
     visualize_population_curves_attacked(clf_fragile, clf_robust, dataloader_train, epsilons=epsilons, suptitle="train")
     visualize_population_curves_attacked(clf_fragile, clf_robust, dataloader_test, epsilons=epsilons, suptitle="test",img_path=args.img_path)
 
