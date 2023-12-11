@@ -58,7 +58,7 @@ def calibration_slope(clf, dataloader, epsilons,args=None):
         if epsilon == 0.0:
             rate_attack = clf(X).detach()
             y_pred = 1-torch.exp(-rate_attack*T)
-            prob_true,prob_pred = calibration_curve(E,y_pred,pos_label=1,n_bins=5,strategy='quantile')
+            prob_true,prob_pred = calibration_curve(E,y_pred,pos_label=1,n_bins=15,strategy='quantile')
             reg = LinearRegression().fit(prob_pred.reshape(-1,1),prob_true.reshape(-1,1))
             cs = reg.coef_.item()
         else:

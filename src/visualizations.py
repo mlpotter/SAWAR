@@ -189,8 +189,8 @@ def visualize_calibration_curves(clf_fragile,clf_robust,dataloader,suptitle="",i
     y_pred_robust = 1 - torch.exp(-lambda_robust * T)
     y_pred_fragile = 1 - torch.exp(-lambda_fragile * T)
 
-    prob_true_rob, prob_pred_rob = calibration_curve(E, y_pred_robust, pos_label=1, n_bins=5, strategy='quantile')
-    prob_true_fra, prob_pred_fra = calibration_curve(E, y_pred_fragile, pos_label=1, n_bins=5, strategy='quantile')
+    prob_true_rob, prob_pred_rob = calibration_curve(E, y_pred_robust, pos_label=1, n_bins=15, strategy='quantile')
+    prob_true_fra, prob_pred_fra = calibration_curve(E, y_pred_fragile, pos_label=1, n_bins=15, strategy='quantile')
 
 
     plot_df = pd.DataFrame({"prob_true_rob": prob_true_rob.ravel(), "prob_pred_rob": prob_pred_rob.ravel(),
