@@ -3,7 +3,7 @@ from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper,
 from src.load_data import load_datasets,load_dataframe
 from src.utils import train_robust,lower_bound,loss_wrapper
 from src.visualizations import *
-from src.metrics import concordance,ibs,rhc_neg_logll
+from src.metrics import concordance,ibs,rhc_neg_logll,calibration_slope
 
 from torch.optim import Adam
 import torch
@@ -75,6 +75,12 @@ def main(args):
     eps_robust, neg_ll_random = rhc_neg_logll(clf_robust, dataloader_train,epsilons,args)
     df_negll_random = pd.DataFrame({"RANDOM Neg LL":neg_ll_random},index=eps_robust)
     print("Train Neg LL RANDOM \n",df_negll_random)
+
+    # Calibration Slope
+    eps_robust, cals_robust = calibration_slope(clf_robust, dataloader_train, epsilons, args=args)
+    df_cals_test = pd.DataFrame({"Robust CalS":cals_robust},index=eps_robust)
+    print("Train Calibration Slope RANDOM \n",df_cals_test)
+
 
     # get the train tensors (X,T,E)
     X_train, T_train, E_train = dataloader_train.dataset.tensors
@@ -177,6 +183,7 @@ def main(args):
     df_ci_train = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
     print("Train Concordance Index \n",df_ci_train)
 
+    # Concordance index
     eps_robust, ci_robust = concordance(clf_robust, dataloader_test, epsilons,args)
     _, ci_fragile = concordance(clf_fragile, dataloader_test, epsilons,args)
     df_ci_test = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
@@ -184,17 +191,28 @@ def main(args):
     print("Test Concordance Index \n",df_ci_test)
 
 
+    # Integrated brier score
     eps_robust, ibs_robust = ibs(clf_robust, dataloader_train, dataloader_test,epsilons,args)
     _, ibs_fragile = ibs(clf_fragile, dataloader_train,dataloader_test, epsilons,args)
     df_ibs_test = pd.DataFrame({"Robust IBS":ibs_robust,"Non Robust IBS":ibs_fragile},index=eps_robust)
     df_ibs_test.to_excel(os.path.join(args.img_path,"IBS.xlsx"),index_label="eps")
     print("Test Integrated Brier Score \n",df_ibs_test)
 
+    #  NegLL
     eps_robust, neg_ll_robust = rhc_neg_logll(clf_robust, dataloader_test,epsilons,args)
     _, neg_ll_fragile = rhc_neg_logll(clf_fragile, dataloader_test, epsilons,args)
     df_neg_ll_test = pd.DataFrame({"Robust NegLL":neg_ll_robust,"Non Robust NegLL":neg_ll_fragile},index=eps_robust)
     df_neg_ll_test.to_excel(os.path.join(args.img_path,"NegLL.xlsx"),index_label="eps")
     print("Test NLL \n",df_neg_ll_test)
+
+    # Calibration Slope
+    eps_robust, cals_robust = calibration_slope(clf_robust, dataloader_test, epsilons, args=args)
+    _,cals_fragile = calibration_slope(clf_fragile, dataloader_test, epsilons, args=args)
+    df_cals_test = pd.DataFrame({"Robust NegLL":cals_robust,"Non Robust NegLL":cals_fragile},index=eps_robust)
+    df_cals_test.to_excel(os.path.join(args.img_path,"CalS.xlsx"),index_label="eps")
+    print("Test CalS \n",df_cals_test)
+
+    visualize_calibration_curves(clf_fragile, clf_robust, dataloader_test, suptitle="Calibration Curves", img_path=args.img_path)
 
     visualize_learning_curves(epochs, loss_tr_fragile, loss_val_fragile, loss_tr_robust, loss_val_robust, suptitle="Learning Curves",
                               img_path=args.img_path)

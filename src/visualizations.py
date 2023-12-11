@@ -14,6 +14,7 @@ from src.utils import lower_bound
 
 import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter
+from sklearn.calibration import calibration_curve
 
 
 def visualize_individual_curves_attacked(clf,dataloader,epsilon,order="ascending",test_cases=10):
@@ -175,6 +176,63 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
         plt.savefig(os.path.join(img_path,f"individual_lambda_histogram_{suptitle}.png"))
 
     plt.show()
+
+
+def visualize_calibration_curves(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    X,T,E = dataloader.dataset.tensors
+
+
+    lambda_robust = clf_robust(X).detach()
+    lambda_fragile = clf_fragile(X).detach()
+
+    y_pred_robust = 1 - torch.exp(-lambda_robust * T)
+    y_pred_fragile = 1 - torch.exp(-lambda_fragile * T)
+
+    prob_true_rob, prob_pred_rob = calibration_curve(E, y_pred_robust, pos_label=1, n_bins=5, strategy='quantile')
+    prob_true_fra, prob_pred_fra = calibration_curve(E, y_pred_fragile, pos_label=1, n_bins=5, strategy='quantile')
+
+
+    plot_df = pd.DataFrame({"prob_true_rob": prob_true_rob.ravel(), "prob_pred_rob": prob_pred_rob.ravel(),
+                            "prob_true_fra": prob_true_fra.ravel(), "prob_pred_fra": prob_pred_fra.ravel()})
+
+    axes[1].set_xlim([-0.05, 1.05])
+    axes[1].set_ylim([-0.05, 1.05])
+    axes[1].set_xlabel("Mean Predicted Probability")
+    axes[1].set_ylabel("Fraction of positives")
+    axes[1].plot(prob_pred_rob,prob_true_rob,'ro-')
+    axes[1].plot([0,1],[0,1],'g--')
+    axes[1].set_title("Robust")
+
+    axes[0].set_xlim([-0.05, 1.05])
+    axes[0].set_ylim([-0.05, 1.05])
+    axes[0].set_xlabel("Mean Predicted Probability")
+    axes[0].set_ylabel("Fraction of positives")
+    axes[0].plot(prob_pred_fra,prob_true_fra,'ko-')
+    axes[0].plot([0,1],[0,1],'g--')
+    axes[0].set_title("Baseline")
+
+    axes[2].set_xlim([-0.05, 1.05])
+    axes[2].set_ylim([-0.05, 1.05])
+    axes[2].set_xlabel("Mean Predicted Probability")
+    axes[2].set_ylabel("Fraction of positives")
+    axes[2].set_title("Overlap")
+    axes[2].plot(prob_pred_fra,prob_true_fra,'ko-')
+    axes[2].plot(prob_pred_rob,prob_true_rob,'ro-')
+    axes[2].plot([0,1],[0,1],'g--')
+
+
+    plt.suptitle(suptitle)
+    plt.tight_layout()
+
+    if img_path != "":
+        plt.savefig(os.path.join(img_path,f"calibration_curves_{suptitle}.png"))
+        plot_df.to_excel(os.path.join(img_path,f"calibration_curves_{suptitle}.xlsx"),index=False)
+
+    plt.show()
+
+
+
 
 def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))

@@ -6,6 +6,8 @@ from src.utils import lower_bound,attack
 import torch
 from src.criterion import right_censored
 from copy import deepcopy
+from sklearn.calibration import calibration_curve
+from sklearn.linear_model import LinearRegression
 
 def concordance(clf, dataloader, epsilons,args=None):
     X, T, E = dataloader.dataset.tensors
@@ -40,6 +42,50 @@ def concordance(clf, dataloader, epsilons,args=None):
         cis[i] = ci
 
     return epsilons, cis
+
+
+def calibration_slope(clf, dataloader, epsilons,args=None):
+    X, T, E = dataloader.dataset.tensors
+
+    cals = np.zeros_like(epsilons)
+    for i, epsilon in enumerate(epsilons):
+        # lb, rate_attack = lower_bound(clf, X, epsilon)
+        # if epsilon == 0:
+        #     rate_attack = clf(X).detach()
+        #     ci = concordance_index(event_times=T, predicted_scores=-rate_attack, event_observed=E)
+        #
+        # else:
+        if epsilon == 0.0:
+            rate_attack = clf(X).detach()
+            y_pred = 1-torch.exp(-rate_attack*T)
+            prob_true,prob_pred = calibration_curve(E,y_pred,pos_label=1,n_bins=5,strategy='quantile')
+            reg = LinearRegression().fit(prob_pred.reshape(-1,1),prob_true.reshape(-1,1))
+            cs = reg.coef_.item()
+        else:
+            rate_attack = attack(clf,X,T,E,epsilon,args)
+            rate_attack = rate_attack.detach()
+            try:
+                if rate_attack.isnan().sum() > 0:
+                    keep_idx = ~rate_attack.isnan()
+                    y_pred = 1-torch.exp(-rate_attack * T[keep_idx])
+                    prob_true, prob_pred = calibration_curve(E[keep_idx], y_pred, pos_label=1, n_bins=10)
+
+                else:
+                    y_pred = 1-torch.exp(-rate_attack * T)
+                    prob_true, prob_pred = calibration_curve(E, y_pred, pos_label=1, n_bins=10)
+
+                reg = LinearRegression().fit(prob_pred.reshape(-1, 1), prob_true.reshape(-1, 1))
+                cs = reg.coef_.item()
+
+            except:
+                cs = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
+
+        # print("CI @ eps={}".format(epsilon), ci)
+
+        cals[i] = cs
+
+    return epsilons, cals
+
 
 
 def rhc_neg_logll(clf, dataloader, epsilons,args=None):
