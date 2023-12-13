@@ -8,6 +8,7 @@ from src.criterion import right_censored
 from copy import deepcopy
 from sklearn.calibration import calibration_curve
 from sklearn.linear_model import LinearRegression
+from survival_evaluation import d_calibration
 
 def concordance(clf, dataloader, epsilons,args=None):
     X, T, E = dataloader.dataset.tensors
@@ -44,10 +45,10 @@ def concordance(clf, dataloader, epsilons,args=None):
     return epsilons, cis
 
 
-def calibration_slope(clf, dataloader, epsilons,args=None):
+def d_calibration_test(clf, dataloader, epsilons,args=None):
     X, T, E = dataloader.dataset.tensors
 
-    cals = np.zeros_like(epsilons)
+    dps = np.zeros_like(epsilons)
     for i, epsilon in enumerate(epsilons):
         # lb, rate_attack = lower_bound(clf, X, epsilon)
         # if epsilon == 0:
@@ -57,34 +58,32 @@ def calibration_slope(clf, dataloader, epsilons,args=None):
         # else:
         if epsilon == 0.0:
             rate_attack = clf(X).detach()
-            y_pred = 1-torch.exp(-rate_attack*T)
-            prob_true,prob_pred = calibration_curve(E,y_pred,pos_label=1,n_bins=15,strategy='quantile')
-            reg = LinearRegression().fit(prob_pred.reshape(-1,1),prob_true.reshape(-1,1))
-            cs = reg.coef_.item()
+            y_pred = torch.exp(-rate_attack*T)
+            # a p-value of <0.05 IS BAD. We say the null hypothesis that the model is calibrated is wrong.
+            dp = d_calibration(E.ravel().numpy().astype(int),y_pred.ravel().numpy())["p_value"]
+
         else:
             rate_attack = attack(clf,X,T,E,epsilon,args)
             rate_attack = rate_attack.detach()
             try:
                 if rate_attack.isnan().sum() > 0:
                     keep_idx = ~rate_attack.isnan()
-                    y_pred = 1-torch.exp(-rate_attack * T[keep_idx])
-                    prob_true, prob_pred = calibration_curve(E[keep_idx], y_pred, pos_label=1, n_bins=10)
+                    y_pred = torch.exp(-rate_attack[keep_idx] * T[keep_idx])
+
+                    dp = d_calibration(E[keep_idx].ravel().numpy().astype(int), y_pred.ravel().numpy())["p_value"]
 
                 else:
-                    y_pred = 1-torch.exp(-rate_attack * T)
-                    prob_true, prob_pred = calibration_curve(E, y_pred, pos_label=1, n_bins=10)
-
-                reg = LinearRegression().fit(prob_pred.reshape(-1, 1), prob_true.reshape(-1, 1))
-                cs = reg.coef_.item()
+                    y_pred = torch.exp(-rate_attack * T)
+                    dp = d_calibration(E.ravel().numpy().astype(int), y_pred.ravel().numpy())["p_value"]
 
             except:
-                cs = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
+                dp = np.nan  # concordance_index(event_times=T, predicted_scores=-ub, event_observed=E)
 
         # print("CI @ eps={}".format(epsilon), ci)
 
-        cals[i] = cs
+        dps[i] = dp
 
-    return epsilons, cals
+    return epsilons, dps
 
 
 

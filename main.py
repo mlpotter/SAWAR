@@ -3,7 +3,7 @@ from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper,
 from src.load_data import load_datasets,load_dataframe
 from src.utils import train_robust,lower_bound,loss_wrapper
 from src.visualizations import *
-from src.metrics import concordance,ibs,rhc_neg_logll,calibration_slope
+from src.metrics import concordance,ibs,rhc_neg_logll,d_calibration_test
 
 from torch.optim import Adam
 import torch
@@ -76,9 +76,9 @@ def main(args):
     df_negll_random = pd.DataFrame({"RANDOM Neg LL":neg_ll_random},index=eps_robust)
     print("Train Neg LL RANDOM \n",df_negll_random)
 
-    # Calibration Slope
-    eps_robust, cals_robust = calibration_slope(clf_robust, dataloader_train, epsilons, args=args)
-    df_cals_test = pd.DataFrame({"Robust CalS":cals_robust},index=eps_robust)
+    # D-Calibration
+    eps_robust, cals_robust = d_calibration_test(clf_robust, dataloader_train, epsilons, args=args)
+    df_cals_test = pd.DataFrame({"Robust D-Calibration":cals_robust},index=eps_robust)
     print("Train Calibration Slope RANDOM \n",df_cals_test)
 
 
@@ -164,6 +164,11 @@ def main(args):
     clf_aft.predict_survival_function(df_test).quantile(0.95,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
     clf_aft.predict_survival_function(df_test).quantile(0.05,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
 
+    from survival_evaluation import d_calibration
+    survival_probabilities = [clf_aft.predict_survival_function(row, times=row.time).to_numpy()[0][0] for _, row in
+                              df_test.iterrows()]
+    print("Weibull AFT Calibration: ",d_calibration(df_test.event, survival_probabilities))
+
     plt.legend()
     plt.ylim([0,1.05])
     plt.tight_layout()
@@ -206,13 +211,13 @@ def main(args):
     print("Test NLL \n",df_neg_ll_test)
 
     # Calibration Slope
-    eps_robust, cals_robust = calibration_slope(clf_robust, dataloader_test, epsilons, args=args)
-    _,cals_fragile = calibration_slope(clf_fragile, dataloader_test, epsilons, args=args)
-    df_cals_test = pd.DataFrame({"Robust NegLL":cals_robust,"Non Robust NegLL":cals_fragile},index=eps_robust)
-    df_cals_test.to_excel(os.path.join(args.img_path,"CalS.xlsx"),index_label="eps")
-    print("Test CalS \n",df_cals_test)
+    eps_robust, cals_robust = d_calibration_test(clf_robust, dataloader_test, epsilons, args=args)
+    _,cals_fragile = d_calibration_test(clf_fragile, dataloader_test, epsilons, args=args)
+    df_cals_test = pd.DataFrame({"Robust DCal":cals_robust,"Non Robust DCal":cals_fragile},index=eps_robust)
+    df_cals_test.to_excel(os.path.join(args.img_path,"DCal.xlsx"),index_label="eps")
+    print("Test DCal \n",df_cals_test)
 
-    visualize_calibration_curves(clf_fragile, clf_robust, dataloader_test, suptitle="Calibration Curves", img_path=args.img_path)
+    # visualize_calibration_curves(clf_fragile, clf_robust, dataloader_test, suptitle="Calibration Curves", img_path=args.img_path)
 
     visualize_learning_curves(epochs, loss_tr_fragile, loss_val_fragile, loss_tr_robust, loss_val_robust, suptitle="Learning Curves",
                               img_path=args.img_path)
