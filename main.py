@@ -3,7 +3,7 @@ from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper,
 from src.load_data import load_datasets,load_dataframe
 from src.utils import train_robust,lower_bound,loss_wrapper
 from src.visualizations import *
-from src.metrics import concordance,ibs,rhc_neg_logll,d_calibration_test
+from src.metrics import concordance,ibs,rhc_neg_logll,d_calibration_test,ibs_lifelines
 
 from torch.optim import Adam
 import torch
@@ -14,6 +14,7 @@ import seaborn as sns
 
 from lifelines import KaplanMeierFitter,CoxPHFitter,ExponentialFitter,WeibullAFTFitter
 from lifelines.utils import concordance_index
+from survival_evaluation import d_calibration
 
 from auto_LiRPA import BoundedModule, BoundedTensor
 
@@ -164,10 +165,10 @@ def main(args):
     clf_aft.predict_survival_function(df_test).quantile(0.95,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
     clf_aft.predict_survival_function(df_test).quantile(0.05,1).plot(c='r',label="Weibull AFT CI",figsize=(10,10))
 
-    from survival_evaluation import d_calibration
+    ibs_aft = ibs_lifelines(clf_aft,df_train,df_test)
+    negll_aft = -clf_aft.score(df_test,scoring_method="log_likelihood") * df_test.shape[0]
     survival_probabilities = [clf_aft.predict_survival_function(row, times=row.time).to_numpy()[0][0] for _, row in
                               df_test.iterrows()]
-    print("Weibull AFT Calibration: ",d_calibration(df_test.event, survival_probabilities))
 
     plt.legend()
     plt.ylim([0,1.05])
@@ -179,6 +180,9 @@ def main(args):
 
     print("Lifelines Weibull AFT Train CI: {:.3f}".format(clf_aft.score(df_train, scoring_method="concordance_index")))
     print("Lifelines Weibull AFT Test CI: {:.3f}".format(clf_aft.score(df_test, scoring_method="concordance_index")))
+    print("Lifelines Weibull AFT Test IBS: {:.3f} ".format(ibs_aft))
+    print("Lifelines Weibull AFT Test NegLL: {:.3f} ".format(negll_aft))
+    print("Weibull AFT Calibration: ",d_calibration(df_test.event, survival_probabilities))
 
     # ======================= Benchmarks ========================== #
 

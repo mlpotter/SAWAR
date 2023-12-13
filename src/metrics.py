@@ -164,3 +164,25 @@ def ibs(clf, dataloader_train,dataloader_test, epsilons,args=None):
 
 
     return epsilons, ibs_
+
+def ibs_lifelines(clf,df_train,df_test):
+
+
+
+    T_tr, E_tr = df_train.loc[:,["time"]].values,df_train.loc[:,["event"]].values
+
+    T_te, E_te = df_test.loc[:,["time"]].values,df_test.loc[:,["event"]].values
+
+    y_tr = np.ndarray((T_tr.shape[0],),dtype=[('cens',np.bool_),('time',np.float64)])
+    y_tr['cens'] = E_tr.astype(bool).ravel()
+    y_tr['time'] = T_tr.ravel()
+
+    y_te = np.ndarray((T_te.shape[0],),dtype=[('cens',np.bool_),('time',np.float64)])
+    y_te['cens'] = E_te.astype(bool).ravel()
+    y_te['time'] = T_te.ravel()
+
+    t = np.linspace(T_te.min()+1e-4,T_te.max()-1e-4,1000).ravel()
+    St = clf.predict_survival_function(df_test,times=t).T
+    ibs = integrated_brier_score(np.concatenate((y_tr,y_te)), y_te, St, t.ravel())
+
+    return ibs
