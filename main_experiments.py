@@ -22,7 +22,7 @@ import time
 if __name__ == "__main__":
     algorithms = ["pgd","fgsm","noise","crownibp"]
     exclude_datasets = ["Dialysis", "divorce", "Pbc3", "vlbw"]
-    attack = "crownibp"
+    attack = "fgsm"
     batch_job_size = 7
     for algo in algorithms:
         print(f"Algorithm {algo}")
