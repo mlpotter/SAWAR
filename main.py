@@ -148,7 +148,7 @@ def main(args):
     plt.tight_layout()
     if img_path != "":
         plt.savefig(os.path.join(args.img_path,f"survival_curves.png"))
-    plt.show()
+    # plt.show()
 
     # ================ KM ONLY =================== #
     kmf = KaplanMeierFitter(alpha=0.1)
@@ -159,7 +159,7 @@ def main(args):
     plt.tight_layout()
     if img_path != "":
         plt.savefig(os.path.join(args.img_path,f"KM_curves.png"))
-    plt.show()
+    # plt.show()
 
     # ================ WeibullAFTFitter =================== #
     kmf.plot()
@@ -177,7 +177,7 @@ def main(args):
     plt.tight_layout()
     if img_path != "":
         plt.savefig(os.path.join(args.img_path,f"Weibull_AFT_curves.png"))
-    plt.show()
+    # plt.show()
     print("Weibull AFT\n",clf_aft.params_)
 
     print("Lifelines Weibull AFT Train CI: {:.3f}".format(clf_aft.score(df_train, scoring_method="concordance_index")))
@@ -242,6 +242,8 @@ def main(args):
     epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
     visualize_population_curves_attacked(clf_fragile, clf_robust, dataloader_train, epsilons=epsilons, suptitle="train")
     visualize_population_curves_attacked(clf_fragile, clf_robust, dataloader_test, epsilons=epsilons, suptitle="test",img_path=args.img_path)
+
+    plt.close("all")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Minimax Adversarial Optimization',

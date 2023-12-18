@@ -141,7 +141,7 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
         attack_df.to_excel(os.path.join(img_path,f"population_curves_attacked_{suptitle}.xlsx"),index=False)
 
-    plt.show()
+    # plt.show()
 
 def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
@@ -175,7 +175,7 @@ def visualize_individual_lambda_histograms(clf_fragile,clf_robust,dataloader,sup
     if img_path != "":
         plt.savefig(os.path.join(img_path,f"individual_lambda_histogram_{suptitle}.png"))
 
-    plt.show()
+    # plt.show()
 
 
 def visualize_calibration_curves(clf_fragile,clf_robust,dataloader,suptitle="",img_path=""):
@@ -229,7 +229,7 @@ def visualize_calibration_curves(clf_fragile,clf_robust,dataloader,suptitle="",i
         plt.savefig(os.path.join(img_path,f"calibration_curves_{suptitle}.png"))
         plot_df.to_excel(os.path.join(img_path,f"calibration_curves_{suptitle}.xlsx"),index=False)
 
-    plt.show()
+    # plt.show()
 
 
 
@@ -294,7 +294,7 @@ def visualize_curve_distributions(clf_fragile,clf_robust,dataloader,suptitle="",
 
         q_df.to_excel(os.path.join(img_path,f"curve_distributions_{suptitle}.xlsx"),index=False)
 
-    plt.show()
+    # plt.show()
 
 def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_robust,loss_val_robust,suptitle="",img_path=""):
     fig, axes = plt.subplots(1, 2, figsize=(15, 5))
@@ -316,4 +316,4 @@ def visualize_learning_curves(epochs,loss_tr_fragile,loss_val_fragile,loss_tr_ro
     if img_path != "":
         plt.savefig(os.path.join(img_path,f"train_val_{suptitle}.png"))
 
-    plt.show()
+    # plt.show()
