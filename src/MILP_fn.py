@@ -214,32 +214,29 @@ if __name__ == "__main__":
 
         return corner, width
 
-    INPUT_DIM = 10
     VERBOSE = True
+    INPUT_DIM = 4
+    HIDDEN_DIM = 10
     ALPHA = 0.01
     EPS = 0.2
 
     nn_model = torch.nn.Sequential(
-        torch.nn.Linear(INPUT_DIM, 50),
+        torch.nn.Linear(INPUT_DIM, HIDDEN_DIM),
         torch.nn.LeakyReLU(),
-        torch.nn.Linear(50, 50),
+        torch.nn.Linear(HIDDEN_DIM, HIDDEN_DIM),
         torch.nn.LeakyReLU(),
-        torch.nn.Linear(50, 2)
+        torch.nn.Linear(HIDDEN_DIM, 2)
     )
 
     jax_model = pytorch_model_to_jax(nn_model)
 
+    # get input range for some random nominal input
     nominal_input = jnp.array(np.random.rand(1, INPUT_DIM))
-    # input_range = jnp.hstack((np.zeros((28*28,1)),np.ones((28*28,1))))
     input_range = nominal_and_epsilon_to_range(nominal_input, EPS)
-
-    # Example of a fwd pass on the NN using jax
-    nominal_output_jax = jax_model(jnp.array(nominal_input))
 
     # Example of computing bounds using IBP as implemented by jax_verify
     input_bounds = np_range_to_jax_interval(input_range)
-    output_bounds_ibp_jax = jax_verify.interval_bound_propagation(
-        jax_model, input_bounds)
+    output_bounds_ibp_jax = jax_verify.interval_bound_propagation(jax_model, input_bounds)
     output_range_ibp_jax = jax_interval_to_np_range(output_bounds_ibp_jax)
 
     print(f"output bounds via IBP (jax_verify): \n{output_range_ibp_jax}")
