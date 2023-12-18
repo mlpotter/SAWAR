@@ -14,6 +14,7 @@ from math import sqrt
 
 from src.criterion import RightCensorWrapper,right_censored,ranking_loss
 from src.criterion import RightCensorWrapper,RankingWrapper,RHC_Ranking_Wrapper
+from src.MILP_fn import MILP_attack
 
 from csv import writer
 from csv import reader
@@ -366,4 +367,10 @@ def attack(clf,x,t,e,eps,args):
             rate_attack = clf(x_ptb)
 
         clf.zero_grad()
+
+    elif args.attack=="milp":
+        with torch.no_grad():
+            model_seq = torch.nn.Sequential(*clf.module_list)
+            _,rate_attack = MILP_attack(model_seq,x,eps)
+
     return rate_attack

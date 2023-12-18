@@ -65,6 +65,8 @@ def main(args):
 
 
     epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
+    # epsilons = [0.1,0.05,0]
+
     eps_random, ci_random= concordance(clf_robust, dataloader_train, epsilons,args)
     df_ci_random = pd.DataFrame({"RANDOM CI":ci_random},index=eps_random)
     print("Train Concordance Index RANDOM \n",df_ci_random)
@@ -187,6 +189,8 @@ def main(args):
     # ======================= Benchmarks ========================== #
 
     epsilons = [1,0.9, .8, 0.7, .6, 0.5, 0.4,0.3,0.2,0.1,0.05,0]
+    # epsilons = [0.1,0.05,0]
+
     eps_robust, ci_robust = concordance(clf_robust, dataloader_train, epsilons,args)
     _, ci_fragile = concordance(clf_fragile, dataloader_train, epsilons,args)
     df_ci_train = pd.DataFrame({"Robust CI":ci_robust,"Non Robust CI":ci_fragile},index=eps_robust)
