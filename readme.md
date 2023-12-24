@@ -1,6 +1,6 @@
 # Survival Analysis with Adversarial Regularization (SAWAR)
 
-Submitted to IEEE Transactions on Neural Network and Learning Systems.
+Manuscript submmitted to IEEE Transactions on Neural Network and Learning Systems.
 
 ## Overview
 
