@@ -42,11 +42,11 @@ def load_datasets(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
 
 
     # Train-Test split for loading the data
-    X_train,X_test, time_train,time_test, event_train,event_test = train_test_split(X,time,event,stratify=event,test_size=test_size,random_state=123)
+    X_train,X_test, time_train,time_test, event_train,event_test = train_test_split(X,time,event,stratify=event,test_size=test_size,random_state=42)
 
     # Train-Val split for loading the data
     val_size = 0.2/(1-test_size)
-    X_train,X_val, time_train,time_val, event_train,event_val = train_test_split(X_train,time_train,event_train,stratify=event_train,test_size=val_size,random_state=123)
+    X_train,X_val, time_train,time_val, event_train,event_val = train_test_split(X_train,time_train,event_train,stratify=event_train,test_size=val_size,random_state=42)
 
 
     if normalize:
@@ -90,11 +90,11 @@ def load_dataframe(ds_name="ova",drop_first=False,normalize=True,test_size=0.2):
     data_df_ohe.drop("pid",inplace=True,axis=1)
 
     # Train-Test split for loading the data
-    data_train,data_test = train_test_split(data_df_ohe,stratify=data_df_ohe.event,test_size=test_size,random_state=123)
+    data_train,data_test = train_test_split(data_df_ohe,stratify=data_df_ohe.event,test_size=test_size,random_state=42)
 
     # Train-Val split for loading the data
     val_size = 0.2/(1-test_size)
-    data_train,data_val = train_test_split(data_train,stratify=data_train.event,test_size=val_size,random_state=123)
+    data_train,data_val = train_test_split(data_train,stratify=data_train.event,test_size=val_size,random_state=42)
 
     features = [col for col in data_train.columns if col not in ["event","time"]]
 
