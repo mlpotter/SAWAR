@@ -95,6 +95,6 @@ python main_experiments.py
 To recreate the exact results from the paper, set the `random_state=None` in ```load_data.py```.
 
 ### Results
-[Click here to open PDF file of additional results](results\SAWAR_appendix)
+[Click here to open PDF file of additional results](SAWAR_appendix)
 
 [//]: # (<iframe src="https://github.com/username/repository/blob/main/path/to/yourfile.pdf" width="600" height="800"></iframe>)
