@@ -10,3 +10,4 @@
 *.ipynb_checkpoints
 /results*
 /results_*
+/logs/
