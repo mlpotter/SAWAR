@@ -347,7 +347,10 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
 
 def lower_bound(clf, nominal_input, epsilon):
     # Wrap the model with auto_LiRPA.
+
+    clf.train()
     model = BoundedModule(clf, nominal_input)
+    clf.eval()
 
     if isinstance(clf,DeepSurvAAE):
         training = deepcopy(model.training)
