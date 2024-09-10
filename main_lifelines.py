@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    img_path = os.path.join("results",args.folder_name)
+    img_path = os.path.join("results_old", args.folder_name)
     os.makedirs(img_path, exist_ok=True)
 
     args.img_path = img_path
