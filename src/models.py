@@ -126,6 +126,119 @@ class Weibull_Model(nn.Module):
 
         return Ft
 
+
+# ------------------------------- AAE DeepSurv --------------------------------
+class DeepSurvAAE(nn.Module):
+    def __init__(self, input_dim,hidden_layers,output_dim,z_dim=50, dropout=0.2):
+
+        super().__init__()
+        self.dims = [z_dim] + hidden_layers + [output_dim]
+
+        super(DeepSurvAAE, self).__init__()
+        # parses parameters of network from configuration
+        self.activation = 'LeakyReLU'
+
+        self.drop = dropout
+
+        # builds network
+        self.model = self._build_network()
+        self.encoder =  Q_net(input_dim, 200, z_dim)
+        self.decoder = D_net_gauss(100, z_dim)
+
+    def _build_network(self):
+        layers = []
+        for i in range(len(self.dims) - 2):
+            # if i and self.drop is not None:  # adds dropout layer
+            layers.append(nn.Dropout(self.drop))
+            # adds linear layer
+            layers.append(nn.Linear(self.dims[i], self.dims[i + 1]))
+            # adds activation layer
+            layers.append(eval('nn.{}()'.format(self.activation)))
+        # builds sequential network
+        layers.append(nn.Dropout(self.drop))
+        layers.append(nn.Linear(self.dims[-2],self.dims[-1]))
+
+        return nn.Sequential(*layers)
+
+    # def forward(self, X):
+    #     return self.model(X)
+
+    def rate_logit(self,x):
+        # for i,l in enumerate(self.linears):
+        #     x = l(x)
+        #
+        #     if i == (self.num_layers-2):
+        #         break
+        #
+        #     x = F.leaky_relu(x)
+        x = self.encoder(x)
+        return self.model(x)
+
+    def forward(self,x):
+
+        return torch.exp(self.rate_logit(x))
+
+    def pdf_parameters(self,x):
+        rate_logit = self.rate_logit(x)
+        rate = torch.exp(rate_logit)
+        k = torch.ones_like(rate)
+        return rate,k
+
+    def survival_qdf(self,x,t):
+
+        t = t.view(1,-1)
+        rate = self.forward(x)
+        St = torch.exp( -(rate*t))
+
+        return St
+
+    def failure_cdf(self,x,t):
+
+        t = t.view(1,-1)
+        rate = self.forward(x)
+        Ft = 1-torch.exp( -(rate*t))
+
+        return Ft
+
+
+# Encoder
+class Q_net(nn.Module):
+    def __init__(self, X_dim, N, z_dim):
+        super(Q_net, self).__init__()
+        self.lin1 = nn.Linear(X_dim, 250)
+        self.lin2 = nn.Linear(250, N)
+        self.lin3 = nn.Linear(N, N)
+        self.lin3gauss = nn.Linear(N, z_dim)
+
+    def forward(self, x):
+        x = F.dropout(self.lin1(x), p=0.25, training=self.training)
+        x = F.relu(x)
+        x = F.dropout(self.lin2(x), p=0.25, training=self.training)
+        x = F.relu(x)
+        x = F.dropout(self.lin3(x), p=0.25, training=self.training)
+        x = F.relu(x)
+        xgauss = self.lin3gauss(x)
+        return xgauss
+
+
+# Discriminator
+class D_net_gauss(nn.Module):
+    def __init__(self, N, z_dim):
+        super(D_net_gauss, self).__init__()
+        self.lin1 = nn.Linear(z_dim, N)
+        self.lin2 = nn.Linear(N, N)
+        self.lin3 = nn.Linear(N, 1)
+
+    def forward(self, x):
+        x = F.dropout(self.lin1(x), p=0.2, training=self.training)
+        x = F.relu(x)
+        x = F.dropout(self.lin2(x), p=0.2, training=self.training)
+        x = F.relu(x)
+        return F.sigmoid(self.lin3(x))
+
+    # In[8]:
+
+
 def main():
     input_dim = 5
     hidden_layers = [10]
@@ -151,6 +264,15 @@ def main():
     ratek = model(x)
 
     print(rate)
+
+    deepsurv = DeepSurvAAE(input_dim=input_dim, hidden_layers = hidden_layers, output_dim = output_dim, z_dim=50, dropout=0.2)
+    print(deepsurv)
+    print(deepsurv.dims)
+    rate,k = deepsurv.pdf_parameters(x)
+    print(rate)
+
+    St = deepsurv.survival_qdf(x,t)
+    print(St.shape)
 
 if __name__ == "__main__":
     main()

@@ -24,6 +24,7 @@ if __name__ == "__main__":
     exclude_datasets = ["Dialysis", "divorce", "Pbc3", "vlbw"]
     attack = "fgsm"
     batch_job_size = 5
+    
     for algo in algorithms:
         print(f"Algorithm {algo}")
 
@@ -48,6 +49,7 @@ if __name__ == "__main__":
             f'--dataset=zinc --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=200 --no-cuda --batch_size=32 --weight=1/32 --scheduler_name=SmoothedScheduler --scheduler_opts="start=30,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
             f'--dataset=LeukSurv --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=250 --no-cuda --batch_size=128 --weight=1/128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
         ]
+
         # hyperparameters = [
         #     f'--dataset=TRACE --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --weight=100 --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128  --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',
         #     f'--dataset=divorce  --algorithm={algo} --pgd_iter={pgd_iter} --attack={attack} --weight=100 --folder_name={folder_name} --eps=0.5 --lr=1e-3 --num_epochs=400 --no-cuda --batch_size=128 --scheduler_name=SmoothedScheduler --scheduler_opts="start=100,length=30" --loss_wrapper=rhc_rank --pareto="0.1 0.9" --hidden_dims="50 50"',

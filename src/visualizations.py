@@ -1,3 +1,8 @@
+import os
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":16:8"
+
+import torch
+
 import time
 from auto_LiRPA import BoundedModule, BoundedTensor
 from auto_LiRPA.perturbations import *
@@ -16,6 +21,7 @@ import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter
 from sklearn.calibration import calibration_curve
 
+torch.use_deterministic_algorithms(True)
 
 def visualize_individual_curves_attacked(clf,dataloader,epsilon,order="ascending",test_cases=10):
     X,T,E = dataloader.dataset.tensors
@@ -108,6 +114,8 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
         attack_df["robust_eps={:.2f}".format(epsilon)] = St_lb
         axes[1].plot(t,St_lb,'--')
+        clf_robust.zero_grad()
+        del lb,ub
 
     axes[1].set_ylabel("S(t)"); axes[0].set_xlabel("Time")
     axes[1].legend(["Kaplan Meier Numerical","Neural Network Baseline","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])
@@ -125,6 +133,8 @@ def visualize_population_curves_attacked(clf_fragile,clf_robust,dataloader,epsil
 
         attack_df["baseline_eps={:.2f}".format(epsilon)] = St_lb
         axes[0].plot(t,St_lb,'--')
+        clf_fragile.zero_grad()
+        del lb,ub
 
     axes[0].set_ylabel("S(t)"); axes[1].set_xlabel("Time")
     axes[0].legend(["Kaplan Meier Numerical","Neural Network Baseline","Neural Network Robust"]+[f"LB@{epsilon}" for epsilon in epsilons])

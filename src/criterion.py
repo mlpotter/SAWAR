@@ -207,6 +207,39 @@ class RHC_Ranking_Wrapper(nn.Module):
 #         log_right = (1 - e) * -(rate * t)
 #
 #         return -log_exact + -log_right
+class Regularization(object):
+    def __init__(self, order, weight_decay):
+        super(Regularization, self).__init__()
+        self.order = order
+        self.weight_decay = weight_decay
+
+    def __call__(self, model):
+        reg_loss = 0
+        for name, w in model.named_parameters():
+            if 'weight' in name:
+                reg_loss = reg_loss + torch.norm(w, p=self.order)
+        reg_loss = self.weight_decay * reg_loss
+        return reg_loss
+
+class NegativeLogLikelihood(nn.Module):
+    def __init__(self, args):
+        super(NegativeLogLikelihood, self).__init__()
+        self.L2_reg = args.aae_l2_reg
+        self.reg = Regularization(order=2, weight_decay=self.L2_reg)
+
+    def forward(self, risk_pred, y, e, model):
+        mask = torch.ones(y.shape[0], y.shape[0]) #.cuda()
+        mask[(y.T - y) > 0] = 0
+        log_loss = torch.exp(risk_pred) * mask
+        log_loss = torch.sum(log_loss, dim=0) / torch.sum(mask, dim=0)
+        log_loss = torch.log(log_loss).reshape(-1, 1)
+        if torch.sum(e) != 0:
+            neg_log_loss = -torch.sum((risk_pred - log_loss) * e) / torch.sum(e)  # 当e全为0时候需要修改
+        else:
+            neg_log_loss = 0
+        # neg_log_loss = -torch.sum((risk_pred-log_loss) * e) / torch.sum(e)
+        l2_loss = self.reg(model)
+        return neg_log_loss + l2_loss
 
 def main():
     from src.models import Exponential_Model
