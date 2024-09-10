@@ -390,8 +390,109 @@ def attack(clf,x,t,e,eps,args):
 
     return rate_attack
 
+# --------------------------------------- DRAFT --------------------------------
+
+def train_draft_step(model_loss, t, loader, train, opt,args=None):
+    meter = MultiAverageMeter()
+    if train:
+        model_loss.train()
+    else:
+        model_loss.eval()
+
+    # model_loss.to(device)
+    epoch_loss = 0
+    for i, data in enumerate(loader):
+        start = time.time()
+
+        xi, ti, yi = data
+
+        # xi = xi.to(device); ti = ti.to(device); yi = ti.to(device)
+
+        regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
+        meter.update('Loss', regular_loss.item(), xi.size(0))
+
+
+        if train:
+            regular_loss.backward()
+
+            opt.step()
+
+        # epoch_loss += combined_loss.detach().item()
+        epoch_loss += regular_loss.detach().item()
+
+        meter.update('Loss', regular_loss.item(), xi.size(0))
+        meter.update('Time', time.time() - start)
+        if i % 10 == 0 and train:
+            print('[{:2d}:{:4d}]:{}'.format(t, i, meter))
+
+    print('[{:2d}:{:4d}]: {}'.format(t, i, meter))
+
+    return epoch_loss
+
+
+def train_draft(model_loss,dataloader_train,dataloader_val,args):
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
+    # model = BoundedModule(clf, X_train)
+
+    ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
+    optimizer = optim.Adam(model_loss.parameters(), lr=args.lr)
+
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(args.num_epochs/10), gamma=0.99)
+
+    timer = 0.0
+    best_val_loss = np.inf
+    best_epoch = 0
+    window = []
+    loss_train = np.zeros((args.num_epochs,))
+    loss_val = np.zeros((args.num_epochs,))
+
+    N_train = len(dataloader_train.dataset)
+    N_val = len(dataloader_val.dataset)
+
+    for t in range(1, args.num_epochs+1):
+
+        print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
+        start_time = time.time()
+        # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
+        train_epoch_loss = train_draft_step(model_loss, t, dataloader_train, train=True, opt=optimizer,args=args)/N_train
+        epoch_time = time.time() - start_time
+        timer += epoch_time
+        print('Epoch time: {:.4f}, Total time: {:.4f}'.format(epoch_time, timer))
+        print("Evaluating...")
+        with torch.no_grad():
+            # how to clean up this...
+            val_epoch_loss = train_draft_step(model_loss, t, dataloader_val,train=False, opt=None,args=args)/N_val
+
+            if len(window) < args.smooth_window:
+                window.append(val_epoch_loss)
+                val_epoch_smoothed = np.mean(window)
+            else:
+                window[:-1] = window[1:]
+                window[-1] = val_epoch_loss
+                val_epoch_smoothed = np.mean(window)
+
+            if (best_val_loss > val_epoch_smoothed):
+                best_state_dict = deepcopy(model_loss.state_dict())
+                best_val_loss = val_epoch_smoothed
+                best_epoch = t
+
+        if args.save_model != "":
+            torch.save({'state_dict': model_loss.state_dict(), 'epoch': t}, args.save_model)
+
+        loss_train[t-1] = train_epoch_loss
+        loss_val[t-1] = val_epoch_loss
+
+    print(f"Best Validation Loss {best_val_loss} @ {best_epoch}")
+    model_loss.load_state_dict(best_state_dict)
+
+    return np.arange(args.num_epochs),loss_train,loss_val
+
 # --------------------------------------- AAE DeepSurv --------------------------------
-def train_robust_step_aae(deep_surv_aae,
+def train_aae_step(deep_surv_aae,
                           loss_module,dataloader,
                           optim_Q_enc,optim_Q_gen,optim_D,optim_risk,
                           train=True,args=None):
@@ -459,7 +560,7 @@ def train_robust_step_aae(deep_surv_aae,
                 print('[{:2d}]: {}'.format(i, meter))
 
     return epoch_loss
-def train_AAE(deep_surv_aae, dataloader_train, dataloader_val,args):
+def train_aae(deep_surv_aae, dataloader_train, dataloader_val,args):
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     random.seed(args.seed)
@@ -493,7 +594,7 @@ def train_AAE(deep_surv_aae, dataloader_train, dataloader_val,args):
 
         start_time = time.time()
 
-        train_epoch_loss = train_robust_step_aae(deep_surv_aae,
+        train_epoch_loss = train_aae_step(deep_surv_aae,
                               criterion_risk, dataloader_train,
                               optim_Q_enc, optim_Q_gen, optim_D, optim_risk,
                               train=True, args=args)/N_train
@@ -504,7 +605,7 @@ def train_AAE(deep_surv_aae, dataloader_train, dataloader_val,args):
 
         with torch.no_grad():
 
-            val_epoch_loss = train_robust_step_aae(deep_surv_aae,
+            val_epoch_loss = train_aae_step(deep_surv_aae,
                                   criterion_risk, dataloader_val,
                                   optim_Q_enc, optim_Q_gen, optim_D, optim_risk,
                                   train=False, args=args)/N_val
