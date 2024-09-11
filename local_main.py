@@ -14,6 +14,39 @@ if OS == "nt":
     from subprocess import CREATE_NEW_CONSOLE
 
 
+def parse_input_string(input_string):
+    # Define regex patterns to extract parameters
+    patterns = {
+        'attack': r'--attack=(\w+)',
+        'algorithm': r'--algorithm=(\w+)',
+        'dataset': r'--dataset=(\w+)',
+        'seed': r'--seed=(\d+)',
+    }
+
+    # Extract parameters using regex
+    extracted_params = {}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, input_string)
+        if match:
+            extracted_params[key] = match.group(1)
+        else:
+            raise ValueError(f"Could not find parameter {key} in the input string.")
+
+    return extracted_params
+
+
+def experiment_exists(base_path, params):
+    # Construct the folder path based on extracted parameters
+    attack_folder = f"attack_{params['attack']}"
+    algorithm_folder = f"results_{params['algorithm']}"
+    dataset_folder = params['dataset']
+    seed_folder = f"seed_{params['seed']}"
+
+    # Create the full path to check
+    experiment_path = os.path.join(base_path, attack_folder, algorithm_folder, dataset_folder, seed_folder)
+
+    # Check if the path exists
+    return (os.path.exists(experiment_path) and len(os.listdir(experiment_path)) > 10)
 
 
 if __name__ == "__main__":
@@ -54,6 +87,12 @@ if __name__ == "__main__":
 
         if (np.sum([p.poll() is None for p in processes]) < batch_job_size) or (len(processes) < batch_job_size):
             hyperparam = experiments[exp_count]
+
+            # check if folder exists and filled with results
+            if experiment_exists("results", parse_input_string(hyperparam)):
+                exp_count += 1
+                continue
+
             print(hyperparam)
             if OS == "nt":
                 file_full = f"python main.py {hyperparam}"
