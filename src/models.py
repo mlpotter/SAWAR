@@ -16,8 +16,6 @@ class Exponential_Model(nn.Module):
         # self.linears = nn.ModuleList([nn.Linear(self.layers[i],self.layers[i+1]) for i in range(len(self.layers)-1)])
         self.module_list = nn.ModuleList(module_list)
 
-        # self.num_layers = len(self.layers)
-
     def rate_logit(self,x):
         # for i,l in enumerate(self.linears):
         #     x = l(x)
@@ -145,6 +143,12 @@ class DeepSurvAAE(nn.Module):
         self.encoder =  Q_net(input_dim, 200, z_dim)
         self.decoder = D_net_gauss(100, z_dim)
 
+        # self.num_layers = len(self.layers)
+        self.lam_0 = 1.0
+
+    def set_base_hazard(self,lam_0):
+        self.lam_0 = lam_0
+
     def _build_network(self):
         layers = []
         for i in range(len(self.dims) - 2):
@@ -176,11 +180,11 @@ class DeepSurvAAE(nn.Module):
 
     def forward(self,x):
 
-        return torch.exp(self.rate_logit(x))
+        return self.lam_0*torch.exp(self.rate_logit(x))
 
     def pdf_parameters(self,x):
         rate_logit = self.rate_logit(x)
-        rate = torch.exp(rate_logit)
+        rate = self.lam_0*torch.exp(rate_logit)
         k = torch.ones_like(rate)
         return rate,k
 

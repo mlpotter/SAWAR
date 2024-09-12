@@ -127,12 +127,19 @@ def main(args):
 
     elif args.algorithm == "aae":
         epochs, loss_tr, loss_val = train_aae(clf_nn, dataloader_train, dataloader_val, args=args)
+        with torch.no_grad():
+            clf_nn.eval()
+            lam_0 = torch.sum(dataloader_train.dataset.tensors[-1])/torch.sum(dataloader_train.dataset.tensors[-2]*clf_nn.forward(dataloader_train.dataset.tensors[0]))
+            clf_nn.set_base_hazard(lam_0.item())
+
+        clf_nn.train()
 
     elif args.algorithm == "draft":
         wrapper = loss_wrapper(args.loss_wrapper)
         model_wrap = BoundedModule(wrapper(clf_nn,weight=args.weight,sigma=args.sigma),dataloader_train.dataset.tensors)
         # train models
         epochs,loss_tr,loss_val = train_draft(model_wrap, dataloader_train, dataloader_val, args=args)
+        # epochs,loss_tr,loss_val = train_robust(model_wrap, dataloader_train, dataloader_val, method="natural", args=args)
 
     # ================== Evaluate the models ========================== #
     clf_nn.eval()
@@ -155,8 +162,7 @@ def main(args):
     clf_aft.fit(df=df_train,duration_col="time",event_col="event")
 
     clf_exp = ExponentialFitter()
-    clf_exp.fit(durations=T_train.ravel(),event_observed=E_train.ravel())
-
+    clf_exp.fit(durations=T_train.ravel(), event_observed=E_train.ravel())
     # ================= Plot the survival curves ====================== #
 
     St_given_x = clf_nn.survival_qdf(X_train,t).detach()

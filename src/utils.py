@@ -19,6 +19,8 @@ from src.MILP_fn import MILP_attack
 from src.criterion import NegativeLogLikelihood
 from src.models import DeepSurvAAE
 
+import re
+
 from csv import writer
 from csv import reader
 def loss_wrapper(loss_wrapper):
@@ -284,7 +286,8 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
     eps_scheduler = eval(args.scheduler_name)(args.eps, scheduler_opts)
 
     try:
-        train_robust_step = {"crownibp":train_robust_step_crownibp,"pgd":train_robust_step_pgd,"noise":train_robust_step_noise}[args.algorithm]
+        train_robust_step = {"crownibp":train_robust_step_crownibp,"pgd":train_robust_step_pgd,"noise":train_robust_step_noise,
+                             "draft": train_robust_step_crownibp}[args.algorithm]
     except:
         print("Did not select valid training algorithm")
 
@@ -410,9 +413,12 @@ def train_draft_step(model_loss, t, loader, train, opt,args=None):
         xi, ti, yi = data
 
         # xi = xi.to(device); ti = ti.to(device); yi = ti.to(device)
+        if train:
+            opt.zero_grad()
 
         regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
         meter.update('Loss', regular_loss.item(), xi.size(0))
+
 
 
         if train:
@@ -444,8 +450,6 @@ def train_draft(model_loss,dataloader_train,dataloader_val,args):
     ## Step 4 prepare optimizer, epsilon scheduler and learning rate scheduler
     optimizer = optim.Adam(model_loss.parameters(), lr=args.lr)
 
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(args.num_epochs/10), gamma=0.99)
-
     timer = 0.0
     best_val_loss = np.inf
     best_epoch = 0
@@ -456,9 +460,12 @@ def train_draft(model_loss,dataloader_train,dataloader_val,args):
     N_train = len(dataloader_train.dataset)
     N_val = len(dataloader_val.dataset)
 
+    matches = re.search(r'start=(\d+),length=(\d+)', args.scheduler_opts)
+    start = int(matches.group(1))
+    length = int(matches.group(2))
+
     for t in range(1, args.num_epochs+1):
 
-        print("Epoch {}, learning rate {}".format(t, lr_scheduler.get_lr()))
         start_time = time.time()
         # (model_loss, t, loader, eps_scheduler, norm, train, opt, bound_type, pareto=[0.5, 0.5], method='robust')
         train_epoch_loss = train_draft_step(model_loss, t, dataloader_train, train=True, opt=optimizer,args=args)/N_train

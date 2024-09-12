@@ -12,6 +12,7 @@ def right_censored(rate,t,event):
 
     return (-event*log_exact - (1-event)*log_right).sum()
 
+
 # def ranking_loss(rate,t,e):
 #     # column vector
 #     constant = math.log(2)
