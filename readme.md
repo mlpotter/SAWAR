@@ -89,10 +89,10 @@ python main.py \
 You can run all experiments from the paper via the `main_experiments.py` script:
 
 ```bash
-python main_experiments.py
+python local_main.py
 ```
 
-To recreate the exact results from the paper, set the `random_state=None` in ```load_data.py```.
+[//]: # (To recreate the exact results from the paper, set the `random_state=None` in ```load_data.py```.)
 
 ### Results
 [Click here to open PDF file of additional results](SAWAR_appendix.pdf)

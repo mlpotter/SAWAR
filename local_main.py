@@ -9,7 +9,7 @@ from subprocess import Popen
 import pdb
 from time import sleep
 OS = os.name
-
+import time
 if OS == "nt":
     from subprocess import CREATE_NEW_CONSOLE
 

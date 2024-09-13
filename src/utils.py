@@ -286,8 +286,7 @@ def train_robust(model,dataloader_train,dataloader_val,method,args):
     eps_scheduler = eval(args.scheduler_name)(args.eps, scheduler_opts)
 
     try:
-        train_robust_step = {"crownibp":train_robust_step_crownibp,"pgd":train_robust_step_pgd,"noise":train_robust_step_noise,
-                             "draft": train_robust_step_crownibp}[args.algorithm]
+        train_robust_step = {"crownibp":train_robust_step_crownibp,"pgd":train_robust_step_pgd,"noise":train_robust_step_noise}[args.algorithm]
     except:
         print("Did not select valid training algorithm")
 
@@ -417,14 +416,14 @@ def train_draft_step(model_loss, t, loader, train, opt,args=None):
             opt.zero_grad()
 
         regular_loss = model_loss(xi, ti, yi).sum()  # regular Right Censoring
-        meter.update('Loss', regular_loss.item(), xi.size(0))
-
 
 
         if train:
             regular_loss.backward()
 
             opt.step()
+
+        meter.update('Loss', regular_loss.item(), xi.size(0))
 
         # epoch_loss += combined_loss.detach().item()
         epoch_loss += regular_loss.detach().item()
@@ -459,10 +458,6 @@ def train_draft(model_loss,dataloader_train,dataloader_val,args):
 
     N_train = len(dataloader_train.dataset)
     N_val = len(dataloader_val.dataset)
-
-    matches = re.search(r'start=(\d+),length=(\d+)', args.scheduler_opts)
-    start = int(matches.group(1))
-    length = int(matches.group(2))
 
     for t in range(1, args.num_epochs+1):
 
@@ -523,8 +518,10 @@ def train_aae_step(deep_surv_aae,
             xi, ti, yi = data_batch
             # xi = xi.to(args.device); ti = ti.to(args.device); yi = yi.to(args.device)
 
-            deep_surv_aae.encoder.zero_grad()
-            deep_surv_aae.decoder.zero_grad()
+            # deep_surv_aae.encoder.zero_grad()
+            # deep_surv_aae.decoder.zero_grad()
+            deep_surv_aae.zero_grad()
+            loss_module.zero_grad()
 
             # DeepSurv risk loss
             # z_sample = Q(X)  # encode to z
