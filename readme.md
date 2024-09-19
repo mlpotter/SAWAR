@@ -1,6 +1,6 @@
 # Survival Analysis with Adversarial Regularization (SAWAR)
 
-Manuscript submitted to IEEE International Conference on Machine Learning and Applications
+Manuscript submitted to IEEE International Conference on Healthcare Informatics (ICHI) 2024
 
 ## Overview
 
